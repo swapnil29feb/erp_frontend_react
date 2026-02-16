@@ -54,6 +54,42 @@ export const configService = {
 
     attachAccessory: (data: { configuration: number; accessory: number; quantity: number }) =>
         apiClient.post('/configurations/configuration-accessories/', data),
+
+    getProjectConfigurations: async (projectId: string | number) => {
+        const res = await apiClient.get(`/configurations/?project=${projectId}`);
+        return handleListResponse(res);
+    },
+
+    // STEP 3: Separate configuration endpoints
+    getProductConfigurations: async (projectId: string | number, subareaId?: string | number) => {
+        let url = `/configurations/products/?project=${projectId}`;
+        if (subareaId) {
+            url += `&subarea=${subareaId}`;
+        }
+        const res = await apiClient.get(url);
+        return handleListResponse(res);
+    },
+
+    getDriverConfigurations: async (projectId: string | number, subareaId?: string | number) => {
+        let url = `/configurations/drivers/?project=${projectId}`;
+        if (subareaId) {
+            url += `&subarea=${subareaId}`;
+        }
+        const res = await apiClient.get(url);
+        return handleListResponse(res);
+    },
+
+    getAccessoryConfigurations: async (projectId: string | number, subareaId?: string | number) => {
+        let url = `/configurations/accessories/?project=${projectId}`;
+        if (subareaId) {
+            url += `&subarea=${subareaId}`;
+        }
+        const res = await apiClient.get(url);
+        return handleListResponse(res);
+    },
+
+    deleteConfiguration: (id: number) =>
+        apiClient.delete(`/configurations/${id}/`),
 };
 
 export async function fetchConfigurations(params: {

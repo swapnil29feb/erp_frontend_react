@@ -10,7 +10,10 @@ import LoadingSpinner from '../components/LoadingSpinner';
 // Tab Components
 import UnifiedConfigurationTab from '../components/config/UnifiedConfigurationTab';
 import ProjectBOQTab from '../modules/boq/ProjectBOQTab';
-import { fetchConfigurations, configService } from '../services/configService';
+import SummaryTab from '../components/workspace/SummaryTab';
+import { configService } from '../services/configService';
+import { boqService } from '../services/boqService';
+import { mapBOQSummary } from '../utils/boqSummaryMapper';
 import { configurationService } from '../services/configurationService';
 import type { Product, Driver, Accessory } from '../types/config';
 import ActivityFAB from '../components/common/ActivityFAB';
@@ -41,15 +44,26 @@ const ProjectWorkspace: FC = () => {
     // Modal States
     const [showAreaModal, setShowAreaModal] = useState(false);
     const [showSubareaModal, setShowSubareaModal] = useState(false);
-    const [activeTab, setActiveTab] = useState("configuration");
+    const [activeTab, setActiveTab] = useState("areas"); // Start with Areas (Structure)
+
 
     // Configuration States
-    const [allProjectConfigurations, setAllProjectConfigurations] = useState<any[]>([]);
+
+
+    // STEP 2: Separate states for each configuration type
+    const [productConfigs, setProductConfigs] = useState<any[]>([]);
+    const [driverConfigs, setDriverConfigs] = useState<any[]>([]);
+    const [accessoryConfigs, setAccessoryConfigs] = useState<any[]>([]);
+
+    const [loadingConfig, setLoadingConfig] = useState<boolean>(false);
+    const [summary, setSummary] = useState<any>(null);
 
     // Form States
     const [areaForm, setAreaForm] = useState({ name: "" });
     const [subareaForm, setSubareaForm] = useState({ name: "" });
     const navigate = useNavigate();
+
+    const isProjectLevel = project?.inquiry_type === "PROJECT_LEVEL";
 
     useEffect(() => {
         if (!id) return;
@@ -57,12 +71,18 @@ const ProjectWorkspace: FC = () => {
         const initWorkspace = async () => {
             try {
                 const projectRes = await apiClient.get<Project>(`/projects/projects/${id}/`);
-                setProject(projectRes.data);
-                const currentMode = projectRes.data.inquiry_type || 'AREA_WISE';
+                const projData = projectRes.data;
+                setProject(projData);
+
+                const currentMode = projData.inquiry_type || 'AREA_WISE';
                 setMode(currentMode);
 
-                if (currentMode === 'AREA_WISE') {
-                    await loadAreas();
+                if (currentMode === 'PROJECT_LEVEL') {
+                    setActiveTab("configuration");
+                } else {
+                    const areasRes = await apiClient.get<Area[]>(`/projects/projects/${id}/areas/`);
+                    setAreas(areasRes.data);
+                    setActiveTab("areas");
                 }
             } catch (err) {
                 console.error("Workspace init failed", err);
@@ -89,28 +109,64 @@ const ProjectWorkspace: FC = () => {
         try {
             const res = await apiClient.get<Subarea[]>(`/projects/areas/${areaId}/subareas/`);
             setSubareas(res.data);
+            return res.data;
         } catch (err) {
             console.error("Failed to load subareas", err);
+            return [];
         }
     };
 
 
-    const loadProjectConfigs = async () => {
-        if (!project) return;
+
+    // STEP 3: Unified configuration loading function
+    const loadAllConfigurations = async (
+        projectId: number,
+        subareaId?: number
+    ) => {
+        setLoadingConfig(true);
         try {
-            const res = await fetchConfigurations({ projectId: project.id });
-            const data = Array.isArray(res.data) ? res.data : (res.data as any).results || [];
-            setAllProjectConfigurations(data);
+            const [prodRes, drvRes, accRes] = await Promise.all([
+                configService.getProductConfigurations(projectId, subareaId),
+                configService.getDriverConfigurations(projectId, subareaId),
+                configService.getAccessoryConfigurations(projectId, subareaId),
+            ]);
+
+            setProductConfigs(prodRes);
+            setDriverConfigs(drvRes);
+            setAccessoryConfigs(accRes);
+
+
         } catch (err) {
-            console.error("Failed to load project-wide configurations", err);
+            console.error("Failed to load configurations", err);
+        } finally {
+            setLoadingConfig(false);
         }
     };
 
-    useEffect(() => {
-        if (project) {
-            loadProjectConfigs();
+
+    const loadSummaryData = async () => {
+        if (!id) return;
+        try {
+            const data = await boqService.getSummary(id);
+            const mapped = mapBOQSummary(data);
+            setSummary(mapped);
+        } catch (err) {
+            console.error("Failed to load project summary", err);
         }
-    }, [project, selectedArea, selectedSubarea]);
+    };
+
+    // STEP 4: Load on project change or subarea change
+    useEffect(() => {
+        if (!project) return;
+
+        if (project.inquiry_type === 'PROJECT_LEVEL') {
+            loadAllConfigurations(project.id);
+        } else if (selectedSubarea?.id) {
+            loadAllConfigurations(project.id, selectedSubarea.id);
+        }
+
+        loadSummaryData();
+    }, [project, selectedSubarea?.id]);
 
     useEffect(() => {
         const loadMasters = async () => {
@@ -148,8 +204,8 @@ const ProjectWorkspace: FC = () => {
         return map;
     }, [accessories]);
 
-    const projectConfigRows = useMemo(() => {
-        return allProjectConfigurations.map(cfg => {
+    const configMapper = (configs: any[]) => {
+        return configs.map(cfg => {
             const product = productMap.get(cfg.product);
             const driver = driverMap.get(cfg.driver);
             const accessoryIds = Array.isArray(cfg.accessories) ? cfg.accessories : [];
@@ -163,13 +219,21 @@ const ProjectWorkspace: FC = () => {
                 areaName: area?.name || 'Unknown Area',
                 subareaName: sub?.name || '',
                 productData: product || null,
+                product_detail: product || null,
                 driverData: driver || null,
                 accessoriesData: accs,
                 price: product?.base_price || product?.price || 0,
+                unit_price: product?.base_price || product?.price || 0,
                 subtotal: (product?.base_price || product?.price || 0) * cfg.quantity
             };
         });
-    }, [allProjectConfigurations, productMap, driverMap, accessoryMap, areas, subareas]);
+    };
+
+
+    // Separate mapped rows for the new flow
+    const mappedProductConfigs = useMemo(() => configMapper(productConfigs), [productConfigs, productMap, driverMap, accessoryMap, areas, subareas]);
+    const mappedDriverConfigs = useMemo(() => configMapper(driverConfigs), [driverConfigs, productMap, driverMap, accessoryMap, areas, subareas]);
+    const mappedAccessoryConfigs = useMemo(() => configMapper(accessoryConfigs), [accessoryConfigs, productMap, driverMap, accessoryMap, areas, subareas]);
 
     const handleSelectArea = async (area: Area) => {
         if (selectedArea?.id === area.id) return;
@@ -182,12 +246,12 @@ const ProjectWorkspace: FC = () => {
         } finally {
             setLoadingSubareas(false);
         }
-        setActiveTab("configuration");
+        setActiveTab("areas"); // ERP Rule: Areas tab shows structure
     };
 
     const handleSelectSubarea = (subarea: Subarea) => {
         setSelectedSubarea(subarea);
-        setActiveTab("configuration");
+        setActiveTab("configuration"); // ERP Rule: Selecting subarea goes to config
     };
 
     const handleAddArea = () => setShowAreaModal(true);
@@ -224,13 +288,20 @@ const ProjectWorkspace: FC = () => {
         } catch (err) {
             alert("Failed to create subarea");
         }
-    };
+    }
 
     const handleDeleteConfig = async (configId: number) => {
         try {
-            await apiClient.delete(`/projects/configurations/${configId}/`);
+            await configService.deleteConfiguration(configId);
             message.success("Item removed");
-            loadProjectConfigs();
+            // Reload configurations based on project type
+            if (project) {
+                if (isProjectLevel) {
+                    loadAllConfigurations(project.id);
+                } else if (selectedSubarea) {
+                    loadAllConfigurations(project.id, selectedSubarea.id);
+                }
+            }
         } catch (err) {
             message.error("Failed to remove item");
         }
@@ -242,15 +313,22 @@ const ProjectWorkspace: FC = () => {
                 quantity: qty
             });
             message.success("Quantity updated successfully");
-            loadProjectConfigs();
+            // Reload configurations based on project type
+            if (project) {
+                if (isProjectLevel) {
+                    loadAllConfigurations(project.id);
+                } else if (selectedSubarea) {
+                    loadAllConfigurations(project.id, selectedSubarea.id);
+                }
+            }
         } catch (err) {
             console.error("Update failed", err);
-            message.error("Failed to update configuration. Please try again.");
+            console.error("Failed to update configuration. Please try again.");
         }
     };
 
     const renderTabContent = () => {
-        if (mode === 'AREA_WISE' && areas.length === 0) {
+        if (!isProjectLevel && areas.length === 0) {
             return (
                 <div className="table-empty" style={{ padding: '80px' }}>
                     <div style={{ fontSize: '48px', marginBottom: '16px' }}>📍</div>
@@ -265,39 +343,90 @@ const ProjectWorkspace: FC = () => {
             case 'areas':
                 return (
                     <div style={{ padding: '24px' }}>
-                        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '8px' }}>Area Details</h2>
+                        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '24px' }}>Project Structure</h2>
                         <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px' }}>
                                 <div>
-                                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Area Name</label>
-                                    <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', marginTop: '4px' }}>{selectedArea?.name || "All Areas"}</div>
+                                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected Area</label>
+                                    <div style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginTop: '8px' }}>{selectedArea?.name || "None Selection"}</div>
                                 </div>
-                                {selectedSubarea && (
-                                    <div>
-                                        <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>Subarea Name</label>
-                                        <div style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b', marginTop: '4px' }}>{selectedSubarea.name}</div>
-                                    </div>
-                                )}
+                                <div>
+                                    <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Selected Subarea</label>
+                                    <div style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginTop: '8px' }}>{selectedSubarea?.name || "None Selection"}</div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginTop: '32px', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                                <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
+                                    Select a subarea from the left panel to manage its product configurations.
+                                    The Areas tab is for structural definition only.
+                                </p>
                             </div>
                         </div>
                     </div>
                 );
             case 'configuration':
+                if (isProjectLevel) {
+                    return (
+                        <UnifiedConfigurationTab
+                            isProjectLevel={isProjectLevel}
+                            products={mappedProductConfigs}
+                            drivers={mappedDriverConfigs}
+                            accessories={mappedAccessoryConfigs}
+                            areas={[]}
+                            onAddProduct={() => navigate(`/projects/${id}/configure/direct`)}
+                            onDelete={handleDeleteConfig}
+                            onUpdateQty={handleUpdateQty}
+                            isLocked={summary?.status === 'APPROVED'}
+                        />
+                    );
+                }
+                if (!selectedSubarea) {
+                    return (
+                        <div className="table-empty" style={{ padding: '80px' }}>
+                            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚙️</div>
+                            <h3>No Subarea Selected</h3>
+                            <p style={{ color: 'var(--secondary-text)' }}>Please select a subarea from the left panel to manage its configuration.</p>
+                        </div>
+                    );
+                }
+                if (loadingConfig) {
+                    return <div style={{ padding: '40px', textAlign: 'center' }}><LoadingSpinner /></div>;
+                }
                 return (
                     <UnifiedConfigurationTab
-                        configurations={projectConfigRows}
-                        areas={areas}
-                        onAddProduct={(areaId) => navigate(`/projects/${id}/configure/${areaId}`)}
-                        onAddDriver={(areaId) => navigate(`/projects/${id}/configure/${areaId}`)} // Simplified for now
-                        onAddAccessory={(areaId) => navigate(`/projects/${id}/configure/${areaId}`)} // Simplified for now
+                        isProjectLevel={isProjectLevel}
+                        products={mappedProductConfigs}
+                        drivers={mappedDriverConfigs}
+                        accessories={mappedAccessoryConfigs}
+                        areas={selectedArea ? [selectedArea] : []}
+                        onAddProduct={() => navigate(`/projects/${id}/configure/${selectedArea?.id}/${selectedSubarea?.id}`)}
                         onDelete={handleDeleteConfig}
                         onUpdateQty={handleUpdateQty}
+                        isLocked={summary?.status === 'APPROVED'}
+                    />
+                );
+            case 'summary':
+                return (
+                    <SummaryTab
+                        projectId={project?.id || 0}
+                        onGenerateSuccess={() => {
+                            setActiveTab('boq');
+                            // Refresh configs based on project type
+                            if (project) {
+                                if (isProjectLevel) {
+                                    loadAllConfigurations(project.id);
+                                } else if (selectedSubarea) {
+                                    loadAllConfigurations(project.id, selectedSubarea.id);
+                                }
+                            }
+                        }}
                     />
                 );
             case 'boq':
                 return <ProjectBOQTab
                     projectId={project?.id || 0}
-                    hasConfig={allProjectConfigurations.length > 0}
+                    hasConfig={productConfigs.length > 0 || driverConfigs.length > 0 || accessoryConfigs.length > 0}
                 />;
             case 'quotation':
                 return (
@@ -314,15 +443,12 @@ const ProjectWorkspace: FC = () => {
     };
 
     const totals = useMemo(() => {
-        return projectConfigRows.reduce((acc, row) => {
-            const watt = row.productData?.wattage || 0;
-            return {
-                amount: acc.amount + row.subtotal,
-                wattage: acc.wattage + (watt * row.quantity),
-                count: acc.count + row.quantity
-            };
-        }, { amount: 0, wattage: 0, count: 0 });
-    }, [projectConfigRows]);
+        return {
+            amount: summary?.subtotal || 0,
+            wattage: summary?.totalPower || 0,
+            count: (summary?.totalLuminaires || 0) + (summary?.totalDrivers || 0) + (summary?.totalAccessories || 0)
+        };
+    }, [summary]);
 
     if (loading) return <LoadingSpinner />;
     if (error) return <div className="p-10 text-red-500 text-center">{error}</div>;

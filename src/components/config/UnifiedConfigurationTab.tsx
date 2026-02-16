@@ -1,198 +1,126 @@
 
 import React, { useMemo } from 'react';
-import { Button, Table, Card, Typography } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
-
-const { Title, Text } = Typography;
+import { Card, Typography, Button } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+import ConfigurationTable from '../../pages/projects/components/ConfigurationTable';
+const { Title } = Typography;
 
 interface UnifiedConfigurationTabProps {
-    configurations: any[];
+    products?: any[];
+    drivers?: any[];
+    accessories?: any[];
     areas: any[];
     onAddProduct: (areaId: number) => void;
-    onAddDriver: (areaId: number) => void;
-    onAddAccessory: (areaId: number) => void;
     onDelete: (id: number) => void;
     onUpdateQty: (id: number, qty: number) => void;
+    isProjectLevel?: boolean;
+    isLocked?: boolean;
 }
 
 const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
-    configurations,
+    products = [],
+    drivers = [],
+    accessories = [],
     areas,
     onAddProduct,
-    onAddDriver,
-    onAddAccessory,
     onDelete,
-    onUpdateQty
+    onUpdateQty,
+    isProjectLevel = false,
+    isLocked = false
 }) => {
 
     const groupedData = useMemo(() => {
-        const map = new Map();
-        areas.forEach(area => map.set(area.id, { ...area, items: [] }));
+        const allItems = [...products, ...drivers, ...accessories];
 
-        configurations.forEach(config => {
-            const area = map.get(config.area);
-            if (area) {
-                area.items.push(config);
-            }
+        if (isProjectLevel || (areas.length === 0 && allItems.length > 0)) {
+            return [{
+                id: null,
+                name: 'Project Wide Configuration',
+                products: products,
+                drivers: drivers,
+                accessories: accessories
+            }];
+        }
+
+        const map = new Map();
+        areas.forEach(area => map.set(area.id, { ...area, products: [], drivers: [], accessories: [] }));
+
+        products.forEach(p => {
+            const area = map.get(p.area);
+            if (area) area.products.push(p);
         });
 
-        return Array.from(map.values()).filter(area => area.items.length > 0 || true); // Show all areas
-    }, [configurations, areas]);
+        drivers.forEach(d => {
+            const area = map.get(d.area);
+            if (area) area.drivers.push(d);
+        });
 
-    const productColumns = [
-        { title: 'Make', dataIndex: ['productData', 'make'], key: 'make' },
-        { title: 'Order Code', dataIndex: ['productData', 'order_code'], key: 'code', render: (text: string) => <Text strong>{text}</Text> },
-        { title: 'Wattage', dataIndex: ['productData', 'wattage'], key: 'wattage', render: (w: number) => w ? `${w}W` : '-' },
-        {
-            title: 'Qty', dataIndex: 'quantity', key: 'qty', render: (qty: number, record: any) => (
-                <input
-                    type="number"
-                    min={1}
-                    value={qty}
-                    onChange={(e) => onUpdateQty(record.id, parseInt(e.target.value) || 0)}
-                    style={{
-                        width: '70px',
-                        padding: '6px 10px',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        color: '#1e293b',
-                        outline: 'none',
-                        transition: 'all 0.2s',
-                        textAlign: 'center'
-                    }}
-                />
-            )
-        },
-        { title: 'Total', key: 'total', align: 'right' as const, render: (_: any, record: any) => `₹ ${((record.productData?.base_price || 0) * record.quantity).toLocaleString()}` },
-        {
-            title: '', key: 'actions', width: 50, render: (_: any, record: any) => (
-                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(record.id)} />
-            )
-        }
-    ];
+        accessories.forEach(a => {
+            const area = map.get(a.area);
+            if (area) area.accessories.push(a);
+        });
 
-    const driverColumns = [
-        { title: 'Make', dataIndex: ['driverData', 'make'], key: 'make' },
-        { title: 'Order Code', dataIndex: ['driverData', 'order_code'], key: 'code' },
-        { title: 'Qty', dataIndex: 'quantity', key: 'qty' },
-        { title: 'Total', key: 'total', align: 'right' as const, render: (_: any, record: any) => `₹ ${((record.driverData?.base_price || 0) * record.quantity).toLocaleString()}` },
-        {
-            title: '', key: 'actions', width: 50, render: (_: any, record: any) => (
-                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(record.id)} />
-            )
-        }
-    ];
+        return Array.from(map.values()).filter(area =>
+            area.products.length > 0 ||
+            area.drivers.length > 0 ||
+            area.accessories.length > 0 || true
+        );
+    }, [products, drivers, accessories, areas, isProjectLevel]);
 
-    const totalConfigs = configurations.length;
+    if (isProjectLevel) {
+        return (
+            <div className="p-6">
+                <div className="card">
+                    <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <Title level={3} style={{ margin: 0 }}>Project Configuration</Title>
+                        <button className="primary-btn" onClick={() => onAddProduct(0)} disabled={isLocked}>
+                            + Add Product
+                        </button>
+                    </div>
+
+                    <ConfigurationTable
+                        products={products}
+                        drivers={drivers}
+                        accessories={accessories}
+                        onDelete={onDelete}
+                        onUpdateQty={onUpdateQty}
+                        isLocked={isLocked}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px', minHeight: 'calc(100vh - 200px)' }}>
-            {totalConfigs === 0 ? (
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Card
-                        style={{
-                            width: '400px',
-                            textAlign: 'center',
-                            borderRadius: '16px',
-                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-                            border: '1px solid #e2e8f0',
-                            padding: '20px'
-                        }}
-                    >
-                        <div style={{ fontSize: '64px', marginBottom: '20px' }}>⚡</div>
-                        <Title level={3} style={{ marginBottom: '8px', color: '#1e293b' }}>No configuration yet</Title>
-                        <Text type="secondary" style={{ display: 'block', marginBottom: '32px', fontSize: '15px' }}>
-                            Add products to start configuration and generate technical specifications.
-                        </Text>
+            {groupedData.map(area => (
+                <Card
+                    key={area.id}
+                    hoverable
+                    style={{ borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}
+                >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <Title level={4} style={{ margin: 0, color: '#1e293b' }}>{area.name}</Title>
                         <Button
                             type="primary"
-                            size="large"
                             icon={<PlusOutlined />}
-                            disabled={areas.length === 0}
-                            onClick={() => areas[0]?.id && onAddProduct(areas[0].id)}
-                            style={{ height: '48px', padding: '0 32px', borderRadius: '8px', fontWeight: '600' }}
+                            onClick={() => onAddProduct(area.id)}
+                            disabled={isLocked}
                         >
-                            {areas.length === 0 ? 'Create Area First' : 'Add Product'}
+                            Add Product
                         </Button>
-                    </Card>
-                </div>
-            ) : (
-                groupedData.map(area => (
-                    <Card
-                        key={area.id}
-                        hoverable
-                        style={{ borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', border: '1px solid #e2e8f0' }}
-                        title={<Title level={4} style={{ margin: 0, color: '#1e293b' }}>{area.name}</Title>}
-                    >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
-                            {/* Products Section */}
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                    <Title level={5} style={{ margin: 0 }}>Products</Title>
-                                    <Button type="primary" icon={<PlusOutlined />} onClick={() => onAddProduct(area.id)}>Add Product</Button>
-                                </div>
-                                <Table
-                                    dataSource={area.items.filter((i: any) => i.product)}
-                                    columns={productColumns}
-                                    pagination={false}
-                                    size="middle"
-                                    rowKey="id"
-                                />
-                            </div>
+                    </div>
 
-                            {/* Drivers Section */}
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                    <Title level={5} style={{ margin: 0 }}>Drivers</Title>
-                                    <Button icon={<PlusOutlined />} onClick={() => onAddDriver(area.id)}>Add Driver</Button>
-                                </div>
-                                <Table
-                                    dataSource={area.items.filter((i: any) => i.driver)}
-                                    columns={driverColumns}
-                                    pagination={false}
-                                    size="small"
-                                    rowKey="id"
-                                />
-                            </div>
-
-                            {/* Accessories Section */}
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                    <Title level={5} style={{ margin: 0 }}>Accessories</Title>
-                                    <Button icon={<PlusOutlined />} onClick={() => onAddAccessory(area.id)}>Add Accessory</Button>
-                                </div>
-                                <Table
-                                    dataSource={area.items.filter((i: any) => i.accessories && i.accessories.length > 0)}
-                                    columns={[
-                                        {
-                                            title: 'Accessories', key: 'accs', render: (_: any, record: any) => (
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                                    {record.accessoriesData?.map((a: any) => (
-                                                        <span key={a.id} style={{ backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
-                                                            {a.order_code}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )
-                                        },
-                                        { title: 'Qty', dataIndex: 'quantity', key: 'qty' },
-                                        {
-                                            title: '', key: 'actions', width: 50, render: (_: any, record: any) => (
-                                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(record.id)} />
-                                            )
-                                        }
-                                    ]}
-                                    pagination={false}
-                                    size="small"
-                                    rowKey="id"
-                                />
-                            </div>
-                        </div>
-                    </Card>
-                ))
-            )}
+                    <ConfigurationTable
+                        products={area.products}
+                        drivers={area.drivers}
+                        accessories={area.accessories}
+                        onDelete={onDelete}
+                        onUpdateQty={onUpdateQty}
+                        isLocked={isLocked}
+                    />
+                </Card>
+            ))}
         </div>
     );
 };

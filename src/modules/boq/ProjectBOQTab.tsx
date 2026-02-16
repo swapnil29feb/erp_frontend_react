@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import BOQPage from './BOQPage';
+import BOQPage from '../../pages/boq/BOQPage';
 import BOQComparePage from './BOQComparePage';
 
 interface ProjectBOQTabProps {

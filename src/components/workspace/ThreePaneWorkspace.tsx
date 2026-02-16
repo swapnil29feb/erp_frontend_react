@@ -164,12 +164,22 @@ const ThreePaneWorkspace: FC<ThreePaneWorkspaceProps> = ({
         }
     };
 
-    const projectTabs = [
-        { id: 'areas', label: 'Areas' },
-        { id: 'configuration', label: 'Configuration' },
-        { id: 'boq', label: 'BOQ' },
-        { id: 'quotation', label: 'Quotation' }
-    ];
+
+
+    const projectTabs = isProjectLevel
+        ? [
+            { id: 'configuration', label: 'Configuration' },
+            { id: 'summary', label: 'Summary' },
+            { id: 'boq', label: 'BOQ' },
+            { id: 'quotation', label: 'Quotation' }
+        ]
+        : [
+            { id: 'areas', label: 'Areas' },
+            { id: 'configuration', label: 'Configuration' },
+            { id: 'summary', label: 'Summary' },
+            { id: 'boq', label: 'BOQ' },
+            { id: 'quotation', label: 'Quotation' }
+        ];
 
     const showRightPane = isProjectLevel || selectedSubarea;
 

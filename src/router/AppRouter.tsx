@@ -14,18 +14,15 @@ import Settings from '../pages/Settings';
 import RBACPage from '../pages/settings/RBACPage';
 
 // BOQ Module
-import BOQPage from '../modules/boq/BOQPage';
+// BOQ Module
+import BOQPage from '../pages/boq/BOQPage';
 import BOQComparePage from '../modules/boq/BOQComparePage';
 import BOQVersionDetail from '../modules/boq/BOQVersionDetail';
 
 import type { FC } from 'react';
 
 const BOQPageWrapper: FC = () => {
-    const { projectId, boqId } = useParams();
-    return <BOQPage
-        projectId={Number(projectId || 0)}
-        initialBoqId={boqId ? Number(boqId) : undefined}
-    />;
+    return <BOQPage />;
 };
 
 const BOQComparePageWrapper: FC = () => {

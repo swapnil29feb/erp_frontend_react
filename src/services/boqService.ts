@@ -1,7 +1,7 @@
 import apiClient from '../api/apiClient';
 
 export const boqService = {
-    getBOQVersions: async (projectId: number) => {
+    getVersions: async (projectId: number | string) => {
         try {
             const response = await apiClient.get(`/boq/versions/${projectId}/`);
             return response.data;
@@ -11,47 +11,23 @@ export const boqService = {
         }
     },
 
-    generateBOQ: async (projectId: number) => {
-        try {
-            // Ensure empty body is passed for POST request to avoid 411 Length Required or similar issues
-            // standard axios post(url, data, config)
-            const response = await apiClient.post(`/boq/generate/${projectId}/`, {});
-            return response.data;
-        } catch (error: any) {
-            console.error('Error generating BOQ:', error?.response?.data || error);
-            throw error?.response?.data || error;
-        }
-    },
-
-    getBOQDetail: async (boqId: number) => {
+    getBOQSummaryDetail: async (boqId: number | string) => {
         try {
             const response = await apiClient.get(`/boq/summary/detail/${boqId}/`);
             return response.data;
         } catch (error: any) {
             if (error?.response?.status === 404) {
-                return null; // BOQ not found
+                return null;
             }
-            console.error('Error fetching BOQ detail:', error);
             throw error;
         }
     },
 
-    getLatestBOQ: async (projectId: number) => {
+    applyMargin: async (boqId: number | string, percent: number) => {
         try {
-            const response = await apiClient.get(`/boq/summary/${projectId}/`);
-            return response.data;
-        } catch (error: any) {
-            if (error?.response?.status === 404) {
-                return null; // No BOQ generated yet
-            }
-            console.error('Error fetching latest BOQ summary:', error);
-            throw error;
-        }
-    },
-
-    applyMargin: async (boqId: number, margin: number) => {
-        try {
-            const response = await apiClient.post(`/boq/${boqId}/apply-margin/`, { markup_pct: margin });
+            const response = await apiClient.post(`/boq/apply-margin/${boqId}/`, {
+                margin_percent: percent
+            });
             return response.data;
         } catch (error) {
             console.error('Error applying margin:', error);
@@ -59,9 +35,9 @@ export const boqService = {
         }
     },
 
-    approveBOQ: async (boqId: number) => {
+    approveBOQ: async (boqId: number | string) => {
         try {
-            const response = await apiClient.post(`/boq/${boqId}/approve/`);
+            const response = await apiClient.post(`/boq/approve/${boqId}/`);
             return response.data;
         } catch (error) {
             console.error('Error approving BOQ:', error);
@@ -69,19 +45,7 @@ export const boqService = {
         }
     },
 
-    exportBOQExcel: async (boqId: number) => {
-        try {
-            const response = await apiClient.get(`/boq/${boqId}/export-excel/`, {
-                responseType: 'blob'
-            });
-            return response.data;
-        } catch (error) {
-            console.error('Error exporting BOQ Excel:', error);
-            throw error;
-        }
-    },
-
-    exportPDF: async (boqId: number) => {
+    exportPDF: async (boqId: number | string) => {
         try {
             const response = await apiClient.get(`/boq/export/pdf/${boqId}/`, {
                 responseType: 'blob'
@@ -93,34 +57,40 @@ export const boqService = {
         }
     },
 
-    // Keep legacy exportExcel for now or update it in codebase
-    exportExcel: async (boqId: number) => {
-        return boqService.exportBOQExcel(boqId);
-    },
-
-    updateItemPrice: async (boqItemId: number, price: number) => {
+    exportExcel: async (boqId: number | string) => {
         try {
-            const response = await apiClient.patch(`/boq/items/${boqItemId}/price/`, {
-                unit_price: price
+            const response = await apiClient.get(`/boq/export/excel/${boqId}/`, {
+                responseType: 'blob'
             });
             return response.data;
         } catch (error) {
-            console.error('Error updating item price:', error);
+            console.error('Error exporting BOQ Excel:', error);
             throw error;
         }
     },
 
-    getSummary: async (projectId: number) => {
+    generateBOQ: async (projectId: number | string) => {
+        try {
+            const response = await apiClient.post(`/boq/generate/${projectId}/`, {});
+            return response.data;
+        } catch (error: any) {
+            console.error('Error generating BOQ:', error?.response?.data || error);
+            throw error?.response?.data || error;
+        }
+    },
+
+    getSummary: async (projectId: number | string) => {
         try {
             const response = await apiClient.get(`/boq/summary/${projectId}/`);
             return response.data;
         } catch (error) {
-            console.error('Error fetching BOQ summary by project:', error);
+            console.error('Error fetching BOQ summary:', error);
             throw error;
         }
     },
 
-    fetchBoqCount: async (projectId: number): Promise<number> => {
+    // Maintaining for Project list count compatibility
+    fetchBoqCount: async (projectId: number | string): Promise<number> => {
         try {
             const response = await apiClient.get(`/boq/versions/${projectId}/`);
             const data = response.data;
