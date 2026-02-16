@@ -152,15 +152,18 @@ const AccessoryFormModal: React.FC<AccessoryFormModalProps> = ({
 
                         <div className="form-group">
                             <label>Category *</label>
-                            <input
-                                type="text"
-                                value={formData.accessory_category}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, accessory_category: e.target.value })
-                                }
-                                className={errors.accessory_category ? "error" : ""}
-                                placeholder="e.g. Electrical, Mechanical"
-                            />
+                          <select
+    value={formData.accessory_category || ""}
+    onChange={(e) =>
+        setFormData({ ...formData, accessory_category: e.target.value })
+    }
+>
+    <option value="">Select Category</option>
+    <option value="MOUNTING">Mounting</option>
+    <option value="OPTICAL">Optical</option>
+    <option value="DECORATIVE">Decorative</option>
+    <option value="INSTALLATION">Installation</option>
+</select>
                             {errors.accessory_category && (
                                 <span className="error-text">{errors.accessory_category}</span>
                             )}
@@ -263,21 +266,135 @@ const AccessoryFormModal: React.FC<AccessoryFormModalProps> = ({
                     </button>
                 </div>
             </div>
-            <style>{`
-        .form-modal { width: 600px; max-width: 95%; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        .form-group label { font-size: 12px; font-weight: 600; color: #64748b; }
-        .form-group input, .form-group textarea {
-            padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;
-            font-size: 14px; color: #1e293b; transition: all 0.2s;
-        }
-        .form-group input:focus, .form-group textarea:focus {
-            border-color: #2563eb; outline: none; box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
-        }
-        .form-group input.error { border-color: #ef4444; }
-        .error-text { font-size: 11px; color: #ef4444; }
-        .btn-export:disabled { opacity: 0.7; cursor: not-allowed; }
-      `}</style>
+           <style>{`
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 600px;
+    max-width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow:
+        0 20px 25px -5px rgba(0,0,0,0.15),
+        0 10px 10px -5px rgba(0,0,0,0.05);
+    transform: scale(0.92) translateY(10px);
+    transition: all 0.25s ease;
+}
+
+.modal-backdrop.open .modal-content {
+    transform: scale(1) translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 22px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #6b7280;
+    width: 34px;
+    height: 34px;
+}
+
+.modal-close:hover {
+    color: #111827;
+}
+
+.modal-body {
+    padding: 22px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.form-modal { width: 600px; max-width: 95%; }
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+}
+
+.form-group input.error {
+    border-color: #ef4444;
+}
+
+.error-text {
+    font-size: 11px;
+    color: #ef4444;
+}
+
+.btn-export:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+`}</style>
+
         </div>
     );
 };

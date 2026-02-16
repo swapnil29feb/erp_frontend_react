@@ -20,11 +20,34 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         make: '',
         order_code: '',
         description: '',
-        lumen_output: '',
+        luminaire_color_ral: '',
+        characteristics: '',
+        diameter_mm: '',
+        length_mm: '',
+        width_mm: '',
+        height_mm: '',
+        mounting_style: 'SURFACE',
+        beam_angle_degree: '',
+        ip_class: '',
         wattage: '',
-        voltage: '',
-        ip_rating: '',
-        beam_angle: '',
+        op_voltage: '',
+        op_current: '',
+        lumen_output: '',
+        cct_kelvin: '',
+        cri_cci: '',
+        lumen_efficency: '',
+        weight_kg: '',
+        warranty_years: '',
+        website_link: '',
+        visual_image: '',
+        illustrative_details: '',
+        photometrics: '',
+        base_price: '',
+        driver_integration: 'INTEGRATED',
+        cutout_diameter_mm: '',
+        environment: 'INDOOR',
+        control_ready: 'NONE',
+        electrical_type: 'CC',
         is_active: true,
     });
 
@@ -39,12 +62,35 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     ...initialValues,
                     make: initialValues.make || '',
                     order_code: initialValues.order_code || '',
-                    description: initialValues.description || '',
-                    lumen_output: initialValues.lumen_output || '',
-                    wattage: initialValues.wattage || '',
-                    voltage: initialValues.voltage || '',
-                    ip_rating: initialValues.ip_rating || '',
-                    beam_angle: initialValues.beam_angle || '',
+                    description: initialValues.description || '' ,
+                    luminaire_color_ral: initialValues.luminaire_color_ral || '',
+                    characteristics: initialValues.characteristics || '',
+                    diameter_mm: initialValues.diameter_mm ?? '',
+                    length_mm: initialValues.length_mm ?? '',
+                    width_mm: initialValues.width_mm ?? '',
+                    height_mm: initialValues.height_mm ?? '',
+                    mounting_style: initialValues.mounting_style || 'SURFACE',
+                    beam_angle_degree: initialValues.beam_angle_degree || initialValues.beam_angle || '',
+                    ip_class: initialValues.ip_class ?? initialValues.ip_rating ?? '',
+                    wattage: initialValues.wattage ?? '',
+                    op_voltage: initialValues.op_voltage ?? initialValues.voltage ?? '',
+                    op_current: initialValues.op_current ?? '',
+                    lumen_output: initialValues.lumen_output ?? '',
+                    cct_kelvin: initialValues.cct_kelvin ?? '',
+                    cri_cci: initialValues.cri_cci ?? '',
+                    lumen_efficency: initialValues.lumen_efficency ?? '',
+                    weight_kg: initialValues.weight_kg ?? '',
+                    warranty_years: initialValues.warranty_years ?? '',
+                    website_link: initialValues.website_link || '',
+                    visual_image: initialValues.visual_image || '',
+                    illustrative_details: initialValues.illustrative_details || initialValues.description || '',
+                    photometrics: initialValues.photometrics || '',
+                    base_price: initialValues.base_price ?? '',
+                    driver_integration: initialValues.driver_integration || 'INTEGRATED',
+                    cutout_diameter_mm: initialValues.cutout_diameter_mm ?? '',
+                    environment: initialValues.environment || 'INDOOR',
+                    control_ready: initialValues.control_ready || 'NONE',
+                    electrical_type: initialValues.electrical_type || 'CC',
                     is_active: initialValues.is_active ?? true,
                 });
             } else {
@@ -52,11 +98,34 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     make: '',
                     order_code: '',
                     description: '',
-                    lumen_output: '',
+                    luminaire_color_ral: '',
+                    characteristics: '',
+                    diameter_mm: '',
+                    length_mm: '',
+                    width_mm: '',
+                    height_mm: '',
+                    mounting_style: 'SURFACE',
+                    beam_angle_degree: '',
+                    ip_class: '',
                     wattage: '',
-                    voltage: '',
-                    ip_rating: '',
-                    beam_angle: '',
+                    op_voltage: '',
+                    op_current: '',
+                    lumen_output: '',
+                    cct_kelvin: '',
+                    cri_cci: '',
+                    lumen_efficency: '',
+                    weight_kg: '',
+                    warranty_years: '',
+                    website_link: '',
+                    visual_image: '',
+                    illustrative_details: '',
+                    photometrics: '',
+                    base_price: '',
+                    driver_integration: 'INTEGRATED',
+                    cutout_diameter_mm: '',
+                    environment: 'INDOOR',
+                    control_ready: 'NONE',
+                    electrical_type: 'CC',
                     is_active: true,
                 });
             }
@@ -219,9 +288,102 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                             <input
                                 type="text"
                                 value={formData.beam_angle}
-                                onChange={e => setFormData({ ...formData, beam_angle: e.target.value })}
+                                onChange={e => setFormData({ ...formData, beam_angle: e.target.value, beam_angle_degree: e.target.value })}
                                 placeholder="e.g. 36 deg"
                             />
+                        </div>
+
+                        <div className="form-group">
+                            <label>CCT (Kelvin)</label>
+                            <input
+                                type="number"
+                                value={formData.cct_kelvin}
+                                onChange={e => setFormData({ ...formData, cct_kelvin: e.target.value })}
+                                placeholder="e.g. 3000"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>CRI / CCI</label>
+                            <input
+                                type="number"
+                                value={formData.cri_cci}
+                                onChange={e => setFormData({ ...formData, cri_cci: e.target.value })}
+                                placeholder="e.g. 80"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Lumen Efficiency</label>
+                            <input
+                                type="text"
+                                value={formData.lumen_efficency}
+                                onChange={e => setFormData({ ...formData, lumen_efficency: e.target.value })}
+                                placeholder="e.g. 90 lm/W"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Weight (kg)</label>
+                            <input
+                                type="text"
+                                value={formData.weight_kg}
+                                onChange={e => setFormData({ ...formData, weight_kg: e.target.value })}
+                                placeholder="e.g. 1.2"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Warranty (years)</label>
+                            <input
+                                type="number"
+                                value={formData.warranty_years}
+                                onChange={e => setFormData({ ...formData, warranty_years: e.target.value })}
+                                placeholder="e.g. 3"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Base Price</label>
+                            <input
+                                type="text"
+                                value={formData.base_price}
+                                onChange={e => setFormData({ ...formData, base_price: e.target.value })}
+                                placeholder="e.g. 261"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Driver Integration</label>
+                            <select value={formData.driver_integration} onChange={e => setFormData({ ...formData, driver_integration: e.target.value })}>
+                                <option value="INTEGRATED">INTEGRATED</option>
+                                <option value="EXTERNAL">EXTERNAL</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Environment</label>
+                            <select value={formData.environment} onChange={e => setFormData({ ...formData, environment: e.target.value })}>
+                                <option value="INDOOR">INDOOR</option>
+                                <option value="OUTDOOR">OUTDOOR</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Control Ready</label>
+                            <select value={formData.control_ready} onChange={e => setFormData({ ...formData, control_ready: e.target.value })}>
+                                <option value="NONE">NONE</option>
+                                <option value="DALI">DALI</option>
+                                <option value="0-10V">0-10V</option>
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Electrical Type</label>
+                            <select value={formData.electrical_type} onChange={e => setFormData({ ...formData, electrical_type: e.target.value })}>
+                                <option value="CC">CC</option>
+                                <option value="CV">CV</option>
+                            </select>
                         </div>
 
                         <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', paddingTop: '24px' }}>
@@ -244,6 +406,102 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 </div>
             </div>
             <style>{`
+             .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    /* Dark overlay + blur */
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px); /* Safari support */
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+                .modal-backdrop.open {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+                .modal-content {
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                    max-height: 85vh;
+                    overflow-y: auto;
+                    transform: scale(0.95);
+                    transition: transform 0.3s ease;
+                }
+                .modal-backdrop.open .modal-content {
+                    transform: scale(1);
+                }
+                .modal-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 20px;
+                    border-bottom: 1px solid #e5e7eb;
+                }
+                .modal-title {
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: #111827;
+                }
+                .modal-close {
+                    background: none;
+                    border: none;
+                    font-size: 20px;
+                    cursor: pointer;
+                    color: #6b7280;
+                    padding: 0;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: color 0.2s;
+                }
+                .modal-close:hover {
+                    color: #111827;
+                }
+                .modal-body {
+                    padding: 24px;
+                }
+                .modal-footer {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 12px;
+                    padding: 16px 20px;
+                    border-top: 1px solid #e5e7eb;
+                    background-color: #f9fafb;
+                }
+                .btn-secondary {
+                    padding: 8px 16px;
+                    border: 1px solid #d1d5db;
+                    background-color: #f3f4f6;
+                    color: #374151;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 500;
+                    font-size: 14px;
+                    transition: all 0.2s;
+                }
+                .btn-secondary:hover:not(:disabled) {
+                    background-color: #e5e7eb;
+                }
+                .btn-secondary:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                }
                 .form-modal { width: 600px; max-width: 95%; }
                 .form-group { display: flex; flex-direction: column; gap: 4px; }
                 .form-group label { font-size: 12px; font-weight: 600; color: #64748b; }

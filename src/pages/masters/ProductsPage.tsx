@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Table, Button, Input, Space, Tag, Modal, message, Card, Row, Col, Typography, Image } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { productService } from '../../services/productService';
@@ -16,6 +16,7 @@ const ProductsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState('');
+const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Modal states
     const [isFormModalVisible, setIsFormModalVisible] = useState(false);
@@ -41,8 +42,17 @@ const ProductsPage: React.FC = () => {
     }, [currentPage, searchText, fetchProducts]);
 
     const handleSearch = (value: string) => {
-        setSearchText(value);
         setCurrentPage(1);
+        
+        // Clear previous debounce timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        
+        // Set new debounce timer (500ms delay)
+        debounceTimerRef.current = setTimeout(() => {
+            setSearchText(value);
+        }, 500);
     };
 
     const handleCreate = () => {
@@ -69,22 +79,39 @@ const ProductsPage: React.FC = () => {
     };
 
     const handleFormSaved = async (formData: Partial<Product>) => {
-        try {
-            if (formMode === 'create') {
-                await productService.createProduct(formData);
-                message.success('Product created successfully');
+    try {
+
+        // 🔹 CLEAN DATA (remove "" and convert numbers)
+        const cleaned: any = {};
+        Object.entries(formData).forEach(([key, value]) => {
+            if (value === "" || value === undefined || value === null) return;
+
+            // convert numeric strings to numbers
+            if (!isNaN(value as any) && value !== true && value !== false) {
+                cleaned[key] = Number(value);
             } else {
-                if (selectedProduct) {
-                    await productService.updateProduct(selectedProduct.id, formData);
-                    message.success('Product updated successfully');
-                }
+                cleaned[key] = value;
             }
-            setIsFormModalVisible(false);
-            fetchProducts(currentPage, searchText);
-        } catch (err) {
-            message.error('Operation failed');
+        });
+
+        if (formMode === 'create') {
+            await productService.createProduct(cleaned);
+            message.success('Product created successfully');
+        } else {
+            if (selectedProduct) {
+                await productService.updateProduct(selectedProduct.id, cleaned);
+                message.success('Product updated successfully');
+            }
         }
-    };
+
+        setIsFormModalVisible(false);
+        fetchProducts(currentPage, searchText);
+
+    } catch (err) {
+        console.log(err);
+        message.error('Operation failed');
+    }
+};
 
     const handleCopyCode = (code?: string) => {
         if (code) {
@@ -169,7 +196,7 @@ const ProductsPage: React.FC = () => {
                             <Input.Search
                                 placeholder="Search make, code, description..."
                                 allowClear
-                                onSearch={handleSearch}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 style={{ width: 300 }}
                                 enterButton={<SearchOutlined />}
                             />

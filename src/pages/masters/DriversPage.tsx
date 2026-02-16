@@ -7,7 +7,7 @@ import type { Driver } from '../../services/driverService';
 import DriverFormModal from '../../components/common/DriverFormModal';
 import ActivityFAB from '../../components/common/ActivityFAB';
 import { SearchOutlined, PlusOutlined, DownloadOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
-
+import { useRef } from 'react';
 const { Title, Text } = Typography;
 
 const DriversPage: React.FC = () => {
@@ -16,6 +16,7 @@ const DriversPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState('');
+const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Modal states
     const [isFormModalVisible, setIsFormModalVisible] = useState(false);
@@ -40,10 +41,21 @@ const DriversPage: React.FC = () => {
         fetchDrivers(currentPage, searchText);
     }, [currentPage, searchText, fetchDrivers]);
 
-    const handleSearch = (value: string) => {
-        setSearchText(value);
+
+     const handleSearch = (value: string) => {
         setCurrentPage(1);
+        
+        // Clear previous debounce timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        
+        // Set new debounce timer (500ms delay)
+        debounceTimerRef.current = setTimeout(() => {
+            setSearchText(value);
+        }, 500);
     };
+
 
     const handleCreate = () => {
         setFormMode('create');
@@ -156,7 +168,7 @@ const DriversPage: React.FC = () => {
                             <Input.Search
                                 placeholder="Search make, code..."
                                 allowClear
-                                onSearch={handleSearch}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 style={{ width: 300 }}
                                 enterButton={<SearchOutlined />}
                             />
