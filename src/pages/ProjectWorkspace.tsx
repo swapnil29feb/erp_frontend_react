@@ -6,6 +6,7 @@ import apiClient from '../api/apiClient';
 import type { Project, Area, Subarea } from '../types/project';
 import ThreePaneWorkspace from '../components/workspace/ThreePaneWorkspace';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Breadcrumb from '../components/common/Breadcrumb';
 
 // Tab Components
 import UnifiedConfigurationTab from '../components/config/UnifiedConfigurationTab';
@@ -330,6 +331,17 @@ const ProjectWorkspace: FC = () => {
 
     return (
         <>
+            {/* Breadcrumb Navigation */}
+            {project && (
+                <div style={{ padding: '0 var(--space-6)', paddingTop: 'var(--space-4)' }}>
+                    <Breadcrumb items={[
+                        { label: 'Home', path: '/' },
+                        { label: 'Projects', path: '/projects' },
+                        { label: project.name }
+                    ]} />
+                </div>
+            )}
+
             <ThreePaneWorkspace
                 {...{
                     areas, subareas, selectedArea, selectedSubarea, mode,

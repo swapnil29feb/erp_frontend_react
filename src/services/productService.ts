@@ -89,14 +89,51 @@ export const productService = {
         const res = await api.patch(`/masters/products/${id}/`, { is_active: isActive });
         return mapToProduct(res.data);
     },
+createProduct: async (product: Partial<Product>) => {
+    const form = new FormData();
 
-    createProduct: async (product: Partial<Product>) => {
-        const res = await api.post(`/masters/products/`, product);
-        return mapToProduct(res.data);
-    },
+    Object.entries(product).forEach(([key, value]) => {
+        if (value === "" || value === undefined || value === null) return;
 
-    updateProduct: async (id: number, product: Partial<Product>) => {
-        const res = await api.put(`/masters/products/${id}/`, product);
-        return mapToProduct(res.data);
-    }
+        // convert numeric strings to number-like
+        if (!isNaN(value as any) && value !== true && value !== false) {
+            form.append(key, String(Number(value)));
+        } else if ((value as any)?.file?.originFileObj) {
+            // antd Upload component
+            form.append(key, (value as any).file.originFileObj);
+        } else {
+            form.append(key, value as any);
+        }
+    });
+
+    const res = await api.post(`/masters/products/`, form, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
+
+    return mapToProduct(res.data);
+},
+
+
+  updateProduct: async (id: number, product: Partial<Product>) => {
+    const form = new FormData();
+
+    Object.entries(product).forEach(([key, value]) => {
+        if (value === "" || value === undefined || value === null) return;
+
+        if (!isNaN(value as any) && value !== true && value !== false) {
+            form.append(key, String(Number(value)));
+        } else if ((value as any)?.file?.originFileObj) {
+            form.append(key, (value as any).file.originFileObj);
+        } else {
+            form.append(key, value as any);
+        }
+    });
+
+    const res = await api.patch(`/masters/products/${id}/`, form, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
+
+    return mapToProduct(res.data);
+},
+
 };

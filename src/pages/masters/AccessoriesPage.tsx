@@ -7,7 +7,7 @@ import type { Accessory } from '../../services/accessoryService';
 import AccessoryFormModal from '../../components/common/AccessoryFormModal';
 import ActivityFAB from '../../components/common/ActivityFAB';
 import { SearchOutlined, PlusOutlined, DownloadOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
-
+import { useRef } from 'react';
 const { Title, Text } = Typography;
 
 const AccessoriesPage: React.FC = () => {
@@ -16,6 +16,7 @@ const AccessoriesPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState('');
+const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Modal states
     const [isFormModalVisible, setIsFormModalVisible] = useState(false);
@@ -40,10 +41,20 @@ const AccessoriesPage: React.FC = () => {
         fetchAccessories(currentPage, searchText);
     }, [currentPage, searchText, fetchAccessories]);
 
-    const handleSearch = (value: string) => {
-        setSearchText(value);
+     const handleSearch = (value: string) => {
         setCurrentPage(1);
+        
+        // Clear previous debounce timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        
+        // Set new debounce timer (500ms delay)
+        debounceTimerRef.current = setTimeout(() => {
+            setSearchText(value);
+        }, 500);
     };
+
 
     const handleCreate = () => {
         setFormMode('create');
@@ -154,7 +165,7 @@ const AccessoriesPage: React.FC = () => {
                             <Input.Search
                                 placeholder="Search name, category..."
                                 allowClear
-                                onSearch={handleSearch}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 style={{ width: 300 }}
                                 enterButton={<SearchOutlined />}
                             />

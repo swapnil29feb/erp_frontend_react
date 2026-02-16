@@ -1,8 +1,9 @@
-import { useEffect, useState, type FC, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FC, type FormEvent } from "react";
 import api from "../api/apiClient";
 import { useNavigate, useLocation } from "react-router-dom";
 import { boqService } from "../services/boqService";
 import RowActionMenu from "../components/RowActionMenu";
+import Breadcrumb from "../components/common/Breadcrumb";
 
 interface Project {
     id: number;
@@ -16,6 +17,7 @@ interface Project {
 }
 
 const Projects: FC = () => {
+    const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [showModal, setShowModal] = useState(false);
     const [search, setSearch] = useState("");
@@ -25,6 +27,8 @@ const Projects: FC = () => {
     const [page, setPage] = useState(1);
     const [pageSize] = useState(10);
     const [count, setCount] = useState(0);
+    // const [segments, setSegments] = useState<any[]>([]);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const initialFormState = {
         name: "",
@@ -61,13 +65,20 @@ const Projects: FC = () => {
         }
     }, [location.search]);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(search);
-            setPage(1); // Reset to page 1 on new search
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
+        setPage(1);
+        
+        // Clear previous debounce timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        
+        // Set new debounce timer (300ms delay)
+        debounceTimerRef.current = setTimeout(() => {
+            setDebouncedSearch(value);
         }, 300);
-        return () => clearTimeout(timer);
-    }, [search]);
+    };
 
     const loadProjects = async () => {
         try {
@@ -88,22 +99,64 @@ const Projects: FC = () => {
                 })
             );
 
-            setProjects(projectsWithBoq);
-
-            if (!Array.isArray(data) && data.count !== undefined) {
-                setCount(data.count);
-            } else {
-                setCount(projectList.length);
-            }
+            setAllProjects(projectsWithBoq);
         } catch (err) {
             console.error("Project load failed", err);
-            setProjects([]);
+            setAllProjects([]);
         }
     };
 
+    // Fetch segments from backend
+    // const loadSegments = async () => {
+    //     try {
+    //         const res = await api.get("/configurations/segment-areas/");
+    //         setSegments(res.data);
+    //     } catch (err) {
+    //         console.error("Failed to load segments", err);
+    //         setSegments([]);
+    //     }
+    // };
+
+    // Filter projects based on search, status, and segment filters
+    const filterProjects = (searchTerm: string, status: string, segment: string) => {
+        let filtered = allProjects;
+
+        if (searchTerm) {
+            const lowerSearch = searchTerm.toLowerCase();
+            filtered = filtered.filter(p =>
+                p.name.toLowerCase().includes(lowerSearch) ||
+                p.client_name.toLowerCase().includes(lowerSearch) ||
+                (p.project_code && p.project_code.toLowerCase().includes(lowerSearch))
+            );
+        }
+
+        if (status) {
+            filtered = filtered.filter(p => p.status === status);
+        }
+
+        if (segment) {
+            filtered = filtered.filter(p => p.segment_area === segment);
+        }
+
+        return filtered;
+    };
+
+    // Load all projects and segments once on mount
     useEffect(() => {
         loadProjects();
-    }, [statusFilter, segmentFilter, debouncedSearch, page]);
+        // loadSegments();
+    }, []);
+
+    // Filter projects when search, status, or segment changes
+    useEffect(() => {
+        const filtered = filterProjects(debouncedSearch, statusFilter, segmentFilter);
+        const paginatedProjects = filtered.slice(
+            (page - 1) * pageSize,
+            page * pageSize
+        );
+        setProjects(paginatedProjects);
+        setCount(filtered.length);
+    }, [statusFilter, segmentFilter, debouncedSearch, page, pageSize, allProjects]);
 
     const handleCreate = async (e: FormEvent) => {
         e.preventDefault();
@@ -285,6 +338,12 @@ const Projects: FC = () => {
                 <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0 }}>Projects</h1>
             </div>
 
+            {/* Breadcrumb Navigation */}
+            <Breadcrumb items={[
+                { label: 'Home', path: '/' },
+                { label: 'Projects' }
+            ]} />
+
             <div className="table-container">
                 <div className="table-toolbar">
                     <div className="table-filters">
@@ -293,7 +352,7 @@ const Projects: FC = () => {
                             className="table-search"
                             placeholder="Search projects..."
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) => handleSearchChange(e.target.value)}
                         />
                         <select
                             className="table-search"
@@ -473,13 +532,7 @@ const Projects: FC = () => {
                                         style={{ width: '100%', height: '40px' }}
                                         required
                                     />
-                                    <input
-                                        placeholder="Project Code"
-                                        value={form.project_code}
-                                        onChange={(e) => setForm({ ...form, project_code: e.target.value })}
-                                        className="table-search"
-                                        style={{ width: '100%', height: '40px' }}
-                                    />
+                                  
                                     <input
                                         placeholder="Client Name"
                                         value={form.client_name}
@@ -545,10 +598,21 @@ const Projects: FC = () => {
                                         className="table-search"
                                         style={{ width: '100%', height: '40px' }}
                                     >
-                                        <option value="MASTER PLANNING">Master Planning</option>
-                                        <option value="HOSPITALITY">Hospitality</option>
-                                        <option value="RESIDENTIAL">Residential</option>
-                                        <option value="COMMERCIAL">Commercial</option>
+                                        <option value="">Select Segment</option>
+                            <option value="MASTER PLANNING">Master Planning</option>
+                            <option value="COMMERCIAL">Commercial</option>
+                            <option value="PRIVATE RESIDENCE">Private Residence</option>
+                            <option value="RESIDENTIAL TOWNSHIP">Residential Township</option>
+                            <option value="LANDSCAPE">Landscape</option>
+                            <option value="FACADE">Facade</option>
+                            <option value="HOSPITALITY">Hospitality</option>
+                            <option value="HEALTH CARE">Health Care</option>
+                            <option value="PUBLIC SPACE">Public Space</option>
+                            <option value="INDUSTRIAL">Industrial</option>
+                            <option value="RETAIL">Retail</option>
+                            <option value="INFRASTRUCTURE">Infrastructure</option>
+                            <option value="INSTITUTIONS">Institutions</option>
+                            <option value="CLUB HOUSE">Club House</option>
                                     </select>
                                     <input
                                         placeholder="Referred By"

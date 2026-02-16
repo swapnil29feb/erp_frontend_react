@@ -209,7 +209,7 @@ const Dashboard: FC = () => {
                     </div>
                 </Card>
 
-                <Card title="Recent Activity" style={styles.activityCard} headStyle={styles.cardHeader}>
+                {/* <Card title="Recent Activity" style={styles.activityCard} headStyle={styles.cardHeader}>
                     <div style={styles.activityList}>
                         {activity.length === 0 ? (
                             <div style={styles.emptyActivity}>No recent activity found.</div>
@@ -230,7 +230,7 @@ const Dashboard: FC = () => {
                             ))
                         )}
                     </div>
-                </Card>
+                </Card> */}
             </div>
         </div>
     );
