@@ -68,12 +68,12 @@ const Projects: FC = () => {
     const handleSearchChange = (value: string) => {
         setSearch(value);
         setPage(1);
-        
+
         // Clear previous debounce timer
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
         }
-        
+
         // Set new debounce timer (300ms delay)
         debounceTimerRef.current = setTimeout(() => {
             setDebouncedSearch(value);
@@ -532,7 +532,7 @@ const Projects: FC = () => {
                                         style={{ width: '100%', height: '40px' }}
                                         required
                                     />
-                                  
+
                                     <input
                                         placeholder="Client Name"
                                         value={form.client_name}
@@ -599,20 +599,20 @@ const Projects: FC = () => {
                                         style={{ width: '100%', height: '40px' }}
                                     >
                                         <option value="">Select Segment</option>
-                            <option value="MASTER PLANNING">Master Planning</option>
-                            <option value="COMMERCIAL">Commercial</option>
-                            <option value="PRIVATE RESIDENCE">Private Residence</option>
-                            <option value="RESIDENTIAL TOWNSHIP">Residential Township</option>
-                            <option value="LANDSCAPE">Landscape</option>
-                            <option value="FACADE">Facade</option>
-                            <option value="HOSPITALITY">Hospitality</option>
-                            <option value="HEALTH CARE">Health Care</option>
-                            <option value="PUBLIC SPACE">Public Space</option>
-                            <option value="INDUSTRIAL">Industrial</option>
-                            <option value="RETAIL">Retail</option>
-                            <option value="INFRASTRUCTURE">Infrastructure</option>
-                            <option value="INSTITUTIONS">Institutions</option>
-                            <option value="CLUB HOUSE">Club House</option>
+                                        <option value="MASTER PLANNING">Master Planning</option>
+                                        <option value="COMMERCIAL">Commercial</option>
+                                        <option value="PRIVATE RESIDENCE">Private Residence</option>
+                                        <option value="RESIDENTIAL TOWNSHIP">Residential Township</option>
+                                        <option value="LANDSCAPE">Landscape</option>
+                                        <option value="FACADE">Facade</option>
+                                        <option value="HOSPITALITY">Hospitality</option>
+                                        <option value="HEALTH CARE">Health Care</option>
+                                        <option value="PUBLIC SPACE">Public Space</option>
+                                        <option value="INDUSTRIAL">Industrial</option>
+                                        <option value="RETAIL">Retail</option>
+                                        <option value="INFRASTRUCTURE">Infrastructure</option>
+                                        <option value="INSTITUTIONS">Institutions</option>
+                                        <option value="CLUB HOUSE">Club House</option>
                                     </select>
                                     <input
                                         placeholder="Referred By"

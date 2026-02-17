@@ -62,7 +62,7 @@ export const configService = {
 
     // STEP 3: Separate configuration endpoints
     getProductConfigurations: async (projectId: string | number, subareaId?: string | number) => {
-        let url = `/configurations/products/?project=${projectId}`;
+        let url = `/configurations/products/?id=${projectId}`;
         if (subareaId) {
             url += `&subarea=${subareaId}`;
         }
@@ -71,7 +71,8 @@ export const configService = {
     },
 
     getDriverConfigurations: async (projectId: string | number, subareaId?: string | number) => {
-        let url = `/configurations/drivers/?project=${projectId}`;
+        console.log("projectId", projectId);
+        let url = `/configurations/drivers/?id=${projectId}`;
         if (subareaId) {
             url += `&subarea=${subareaId}`;
         }
@@ -80,7 +81,7 @@ export const configService = {
     },
 
     getAccessoryConfigurations: async (projectId: string | number, subareaId?: string | number) => {
-        let url = `/configurations/accessories/?project=${projectId}`;
+        let url = `/configurations/accessories/?id=${projectId}`;
         if (subareaId) {
             url += `&subarea=${subareaId}`;
         }

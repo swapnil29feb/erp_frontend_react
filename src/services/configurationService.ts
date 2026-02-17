@@ -22,4 +22,9 @@ export const configurationService = {
     }
 };
 
+export const getProjectConfigurations = async (projectId: number) => {
+    const response = await apiClient.get(`/configurations/?project_id=${projectId}`);
+    return response.data;
+};
+
 export default configurationService;
