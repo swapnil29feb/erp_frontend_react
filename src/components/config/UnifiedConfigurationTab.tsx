@@ -41,6 +41,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
     const [productConfigs, setProductConfigs] = useState<any[]>([]);
     const [driverConfigs, setDriverConfigs] = useState<any[]>([]);
     const [accessoryConfigs, setAccessoryConfigs] = useState<any[]>([]);
+const lastHasDataRef = React.useRef<boolean | null>(null);
 
     const loadData = useCallback(async () => {
         if (!projectId) return;
@@ -170,12 +171,17 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
         loadData();
     }, [projectId]);
 
-    useEffect(() => {
-        if (!loading && onDataLoaded) {
-            const hasData = productConfigs.length > 0;
+useEffect(() => {
+    if (!loading && onDataLoaded) {
+        const hasData = productConfigs.length > 0;
+
+        // prevent infinite parent update loop
+        if (lastHasDataRef.current !== hasData) {
+            lastHasDataRef.current = hasData;
             onDataLoaded(hasData);
         }
-    }, [loading, productConfigs.length, onDataLoaded]);
+    }
+}, [loading, productConfigs.length, onDataLoaded]);
 
  const groupedData = useMemo(() => {
 
