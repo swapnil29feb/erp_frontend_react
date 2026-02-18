@@ -321,7 +321,7 @@ const ProjectWorkspace: FC = () => {
                             areas={[]}
                             onAddProduct={() => navigate(`/projects/${id}/configure/direct`)}
                             onDelete={handleDeleteConfig}
-                            onUpdateQty={handleUpdateQty}
+                            // onUpdateQty={handleUpdateQty}
                             onDataLoaded={(hasData) => {
                                 // Sync config existence state
                                 if (hasData !== (productConfigs.length > 0)) {
@@ -357,7 +357,7 @@ const ProjectWorkspace: FC = () => {
                         areas={selectedArea ? [selectedArea] : []}
                         onAddProduct={() => navigate(`/projects/${id}/configure/${selectedArea?.id}/${selectedSubarea?.id}`)}
                         onDelete={handleDeleteConfig}
-                        onUpdateQty={handleUpdateQty}
+                        // onUpdateQty={handleUpdateQty}
                         onDataLoaded={(hasData) => {
                             if (hasData) setProductConfigs([{ id: 'dummy' }]);
                             else setProductConfigs([]);

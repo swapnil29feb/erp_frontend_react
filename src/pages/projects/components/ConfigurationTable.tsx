@@ -9,7 +9,7 @@ interface ConfigurationTableProps {
     drivers: any[];
     accessories: any[];
     isLocked?: boolean;
-    onUpdateQty: (id: number, qty: number) => void;
+    // onUpdateQty: (id: number, qty: number) => void;
     onDelete: (id: number) => void;
 }
 
@@ -18,12 +18,14 @@ const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
     drivers,
     accessories,
     isLocked = false,
-    onUpdateQty,
+    // onUpdateQty,
     onDelete
 }) => {
 
+// console.log("products in ConfigurationTable:", products);
+// console.log(" accessories in ConfigurationTable:", accessories);
 
-
+// console.log("drivers in ConfigurationTable:", drivers);
     // STEP 6: Fix totals inside table to include nested components
     const productTotal = products.reduce(
         (sum, p) => sum + (p.quantity * (p.product_detail?.price || 0)),
@@ -38,15 +40,25 @@ const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
         0
     );
 
-    const accessoryTotal = accessories.reduce(
+   const accessoryTotal =
+    // standalone accessories
+    accessories.reduce(
         (sum, a) => sum + (a.quantity * (a.accessory_detail?.price || 0)),
         0
-    ) + products.reduce(
-        (sum, p) => sum + (p.quantity * (
-            (p.accessoriesData || []).reduce((accSum: number, acc: any) => accSum + (acc.price || 0), 0)
-        )),
-        0
-    );
+    )
+    +
+    // accessories attached to products
+    products.reduce((sum, p) => {
+
+        const accessoryUnitPrice = (p.accessoriesData || []).reduce(
+            (accSum: number, acc: any) => accSum + (acc.price || 0),
+            0
+        );
+
+        return sum + (p.quantity * accessoryUnitPrice);
+
+    }, 0);
+
 
     const grandTotal = productTotal + driverTotal + accessoryTotal;
 
@@ -109,10 +121,10 @@ const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
                     type="number"
                     min={1}
                     value={row.quantity || 1}
-                    onChange={(e) =>
-                        onUpdateQty(row.id, parseInt(e.target.value || "1"))
-                    }
-                    disabled={isLocked}
+                    // onChange={(e) =>
+                    //     // onUpdateQty(row.id, parseInt(e.target.value || "1"))
+                    // }
+                    disabled={true}
                     style={{
                         width: "70px",
                         padding: "4px",
@@ -142,14 +154,14 @@ const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
                 );
             }
         },
-        {
-            title: '',
-            key: 'actions',
-            width: 50,
-            render: (_: any, row: any) => (
-                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(row.id)} disabled={isLocked} />
-            )
-        }
+        // {
+        //     title: '',
+        //     key: 'actions',
+        //     width: 50,
+        //     render: (_: any, row: any) => (
+        //         <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(row.id)} disabled={isLocked} />
+        //     )
+        // }
     ];
 
     const allData = [...products, ...drivers, ...accessories];

@@ -75,6 +75,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
         setLoading(true);
         try {
             const data = await boqService.getBOQSummaryDetail(boqId);
+            console.log(data)
             if (data) {
                 setBoqItems(data.items || []);
                 const mapped = mapBOQSummary(data);

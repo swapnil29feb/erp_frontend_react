@@ -57,6 +57,7 @@ export const configService = {
 
     getProjectConfigurations: async (projectId: string | number) => {
         const res = await apiClient.get(`/configurations/?project=${projectId}`);
+        // console.log("Project Configurations Response:", res);
         return handleListResponse(res);
     },
 

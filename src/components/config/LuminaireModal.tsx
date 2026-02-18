@@ -106,11 +106,12 @@ const LuminaireModal: React.FC<LuminaireModalProps> = ({ areaId, subareaId, onCl
                                                 type="number"
                                                 min="1"
                                                 value={quantities[p.prod_id] || 1}
-                                                onChange={(e) => setQuantities({ ...quantities, [p.prod_id]: Number(e.target.value) })}
+                                                readOnly={true}
+                                                // onChange={(e) => setQuantities({ ...quantities, [p.prod_id]: Number(e.target.value) })}
                                                 style={{ width: '50px', padding: '4px', border: '1px solid #ddd' }}
                                             />
                                         </td>
-                                        <td>
+                                        {/* <td>
                                             <button
                                                 onClick={() => handleAdd(p)}
                                                 disabled={adding !== null}
@@ -118,7 +119,7 @@ const LuminaireModal: React.FC<LuminaireModalProps> = ({ areaId, subareaId, onCl
                                             >
                                                 {adding === p.prod_id ? '...' : 'Add'}
                                             </button>
-                                        </td>
+                                        </td> */}
                                     </tr>
                                 ))}
                             </tbody>

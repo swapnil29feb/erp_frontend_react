@@ -17,7 +17,7 @@ interface UnifiedConfigurationTabProps {
     areas: any[];
     onAddProduct: (areaId: number) => void;
     onDelete: (id: number) => void;
-    onUpdateQty: (id: number, qty: number) => void;
+    // onUpdateQty: (id: number, qty: number) => void;
     onDataLoaded?: (hasData: boolean) => void;
 }
 
@@ -34,7 +34,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
     areas,
     onAddProduct,
     onDelete,
-    onUpdateQty,
+    // onUpdateQty,
     onDataLoaded
 }) => {
     const [loading, setLoading] = useState(false);
@@ -47,6 +47,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
         setLoading(true);
         try {
             const data = await getProjectConfigurations(projectId);
+            console.log("Raw data from API:", data);
 
             // Helper to safely parse numbers
             const safeFloat = (val: any) => {
@@ -176,43 +177,54 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
         }
     }, [loading, productConfigs.length, onDataLoaded]);
 
-    const groupedData = useMemo(() => {
-        const allItems = [...productConfigs, ...driverConfigs, ...accessoryConfigs];
+ const groupedData = useMemo(() => {
 
-        if (isProjectLevel || (areas.length === 0 && allItems.length > 0)) {
-            return [
-                {
-                    id: null,
-                    name: 'Project Wide Configuration',
-                    products: productConfigs,
-                    drivers: driverConfigs,
-                    accessories: accessoryConfigs,
-                },
-            ];
-        }
+    // If no areas OR project level → make virtual area
+    const useProjectWide = isProjectLevel || areas.length === 0;
 
-        const map = new Map();
-        areas.forEach((area) =>
+    const map = new Map();
+
+    // Create area buckets
+    if (useProjectWide) {
+        map.set('project-wide', {
+            id: null,
+            name: 'Project Wide Configuration',
+            products: [],
+            drivers: [],
+            accessories: [],
+        });
+    } else {
+        areas.forEach(area =>
             map.set(area.id, { ...area, products: [], drivers: [], accessories: [] })
         );
+    }
 
-        productConfigs.forEach((p) => {
-            const area = map.get(p.area);
-            if (area) area.products.push(p);
-        });
+    // Assign products
+    productConfigs.forEach(p => {
+        const key = useProjectWide ? 'project-wide' : p.area;
+        const area = map.get(key);
+         area.products.push(p);
+    });
 
-        driverConfigs.forEach((d) => {
-            const area = map.get(d.area);
-            if (area) area.drivers.push(d);
-        });
+    // Assign drivers
+    driverConfigs.forEach(d => {
+        const key = useProjectWide ? 'project-wide' : d.area;
+        const area = map.get(key);
 
-        accessoryConfigs.forEach((a) => {
-            const area = map.get(a.area);
-            if (area) area.accessories.push(a);
-        });
+        if (area) area.drivers.push(d);
+    });
 
-        return Array.from(map.values());
-    }, [productConfigs, driverConfigs, accessoryConfigs, areas, isProjectLevel]);
+    // Assign accessories
+    accessoryConfigs.forEach(a => {
+        const key = useProjectWide ? 'project-wide' : a.area;
+        const area = map.get(key);
+
+        if (area) area.accessories.push(a);
+    });
+
+    return Array.from(map.values());
+
+}, [productConfigs, driverConfigs, accessoryConfigs, areas, isProjectLevel]);
 
     const hasAnyConfig =
         productConfigs.length > 0 ||
@@ -226,7 +238,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
             </div>
         );
     }
-
+console.log("Grouped Data for Rendering:", groupedData);
     return (
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {groupedData.map((area) => (
@@ -261,7 +273,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
                                 drivers={[]}
                                 accessories={[]}
                                 onDelete={onDelete}
-                                onUpdateQty={onUpdateQty}
+                                // onUpdateQty={onUpdateQty}
                                 isLocked={isLocked}
                             />
                         )}
@@ -296,7 +308,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
                                         // 1. Calculate Product Configurations (Product + Attached Driver + Attached Accessories)
                                         area.products.reduce((s: number, p: any) => {
                                             const productPrice = p.product_detail?.base_price || p.product_detail?.price || 0;
-                                            const driverPrice = p.driverData?.price || 0;
+                                            const driverPrice = p.driverData?.base_price || 0;
                                             const accPrice = (p.accessoriesData || []).reduce(
                                                 (accSum: number, a: any) => accSum + (a.price || 0), 0
                                             );
