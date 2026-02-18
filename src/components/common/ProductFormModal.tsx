@@ -9,6 +9,78 @@ interface ProductFormModalProps {
     onSaved: (product: any) => Promise<void>;
 }
 
+const FileInput = ({ value, onChange, placeholder }: { value: any, onChange: (file: File | null) => void, placeholder: string }) => {
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // Determine what to show
+    const displayValue = value instanceof File ? value.name : (typeof value === 'string' ? value : '');
+
+    // Check if it is a URL (simple check)
+    const isUrl = typeof value === 'string' && (value.startsWith('http') || value.startsWith('/'));
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            onChange(e.target.files[0]);
+        }
+    };
+
+    return (
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div
+                style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '6px',
+                    backgroundColor: '#f8fafc',
+                    color: displayValue ? '#334155' : '#94a3b8',
+                    fontSize: '14px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                }}
+            >
+                {displayValue || placeholder}
+            </div>
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+                accept="image/*,.pdf"
+            />
+            <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => fileInputRef.current?.click()}
+            >
+                Start Upload
+            </button>
+            {value && (
+                <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
+                    onClick={() => onChange(null)}
+                >
+                    Clear
+                </button>
+            )}
+            {isUrl && (
+                <a
+                    href={value}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-secondary"
+                    style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+                >
+                    View
+                </a>
+            )}
+        </div>
+    );
+};
+
 const ProductFormModal: React.FC<ProductFormModalProps> = ({
     isOpen,
     mode,
@@ -62,7 +134,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     ...initialValues,
                     make: initialValues.make || '',
                     order_code: initialValues.order_code || '',
-                    description: initialValues.description || '' ,
+                    description: initialValues.description || '',
                     luminaire_color_ral: initialValues.luminaire_color_ral || '',
                     characteristics: initialValues.characteristics || '',
                     diameter_mm: initialValues.diameter_mm ?? '',
@@ -83,7 +155,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     warranty_years: initialValues.warranty_years ?? '',
                     website_link: initialValues.website_link || '',
                     visual_image: initialValues.visual_image || '',
-                    illustrative_details: initialValues.illustrative_details || initialValues.description || '',
+                    illustrative_details: initialValues.illustrative_details || '',
                     photometrics: initialValues.photometrics || '',
                     base_price: initialValues.base_price ?? '',
                     driver_integration: initialValues.driver_integration || 'INTEGRATED',
@@ -384,6 +456,33 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                                 <option value="CC">CC</option>
                                 <option value="CV">CV</option>
                             </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label>Visual Image</label>
+                            <FileInput
+                                value={formData.visual_image}
+                                onChange={(file) => setFormData({ ...formData, visual_image: file })}
+                                placeholder="Select visual image"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Illustrative Details</label>
+                            <FileInput
+                                value={formData.illustrative_details}
+                                onChange={(file) => setFormData({ ...formData, illustrative_details: file })}
+                                placeholder="Select details image"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Photometrics</label>
+                            <FileInput
+                                value={formData.photometrics}
+                                onChange={(file) => setFormData({ ...formData, photometrics: file })}
+                                placeholder="Select photometrics file"
+                            />
                         </div>
 
                         <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '8px', paddingTop: '24px' }}>

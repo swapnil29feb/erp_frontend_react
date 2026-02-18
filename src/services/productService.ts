@@ -89,51 +89,63 @@ export const productService = {
         const res = await api.patch(`/masters/products/${id}/`, { is_active: isActive });
         return mapToProduct(res.data);
     },
-createProduct: async (product: Partial<Product>) => {
-    const form = new FormData();
+    createProduct: async (product: Partial<Product>) => {
+        const form = new FormData();
+        console.log('[productService] Creating product with data:', product);
 
-    Object.entries(product).forEach(([key, value]) => {
-        if (value === "" || value === undefined || value === null) return;
+        Object.entries(product).forEach(([key, value]) => {
+            if (value === "" || value === undefined || value === null) return;
 
-        // convert numeric strings to number-like
-        if (!isNaN(value as any) && value !== true && value !== false) {
-            form.append(key, String(Number(value)));
-        } else if ((value as any)?.file?.originFileObj) {
-            // antd Upload component
-            form.append(key, (value as any).file.originFileObj);
-        } else {
-            form.append(key, value as any);
+            // Handle File objects directly (from our custom FileInput)
+            if (value instanceof File) {
+                form.append(key, value);
+            }
+            // convert numeric strings to number-like
+            else if (!isNaN(value as any) && value !== true && value !== false && typeof value !== 'object') {
+                form.append(key, String(Number(value)));
+            } else {
+                form.append(key, value as any);
+            }
+        });
+
+        // Debug output
+        /*
+        for (let [key, value] of form.entries()) {
+             console.log(`${key}:`, value);
         }
-    });
+        */
 
-    const res = await api.post(`/masters/products/`, form, {
-        headers: { "Content-Type": "multipart/form-data" }
-    });
+        const res = await api.post(`/masters/products/`, form, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
 
-    return mapToProduct(res.data);
-},
+        return mapToProduct(res.data);
+    },
 
 
-  updateProduct: async (id: number, product: Partial<Product>) => {
-    const form = new FormData();
+    updateProduct: async (id: number, product: Partial<Product>) => {
+        const form = new FormData();
+        console.log('[productService] Updating product', id, 'with data:', product);
 
-    Object.entries(product).forEach(([key, value]) => {
-        if (value === "" || value === undefined || value === null) return;
+        Object.entries(product).forEach(([key, value]) => {
+            if (value === "" || value === undefined || value === null) return;
 
-        if (!isNaN(value as any) && value !== true && value !== false) {
-            form.append(key, String(Number(value)));
-        } else if ((value as any)?.file?.originFileObj) {
-            form.append(key, (value as any).file.originFileObj);
-        } else {
-            form.append(key, value as any);
-        }
-    });
+            // Handle File objects directly
+            if ((value as any) instanceof File) {
+                form.append(key, value as Blob);
+            }
+            else if (!isNaN(value as any) && value !== true && value !== false && typeof value !== 'object') {
+                form.append(key, String(Number(value)));
+            } else {
+                form.append(key, value as any);
+            }
+        });
 
-    const res = await api.patch(`/masters/products/${id}/`, form, {
-        headers: { "Content-Type": "multipart/form-data" }
-    });
+        const res = await api.patch(`/masters/products/${id}/`, form, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
 
-    return mapToProduct(res.data);
-},
+        return mapToProduct(res.data);
+    },
 
 };

@@ -24,7 +24,7 @@ const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
 
 
 
-    // STEP 6: Fix totals inside table
+    // STEP 6: Fix totals inside table to include nested components
     const productTotal = products.reduce(
         (sum, p) => sum + (p.quantity * (p.product_detail?.price || 0)),
         0
@@ -33,10 +33,18 @@ const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
     const driverTotal = drivers.reduce(
         (sum, d) => sum + (d.quantity * (d.driver_detail?.price || 0)),
         0
+    ) + products.reduce(
+        (sum, p) => sum + (p.quantity * (p.driverData?.price || 0)),
+        0
     );
 
     const accessoryTotal = accessories.reduce(
         (sum, a) => sum + (a.quantity * (a.accessory_detail?.price || 0)),
+        0
+    ) + products.reduce(
+        (sum, p) => sum + (p.quantity * (
+            (p.accessoriesData || []).reduce((accSum: number, acc: any) => accSum + (acc.price || 0), 0)
+        )),
         0
     );
 
