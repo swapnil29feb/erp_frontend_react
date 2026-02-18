@@ -37,13 +37,27 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 password,
             });
 
-            const { access, refresh } = response.data;
+            // Expected response: { access, refresh, user }
+            const { access, refresh, user } = response.data;
 
-            localStorage.setItem('access_token', access);
-            localStorage.setItem('refresh_token', refresh);
-            setAccessToken(access);
-            setIsAuthenticated(true);
+            if (access) {
+                localStorage.setItem('access_token', access);
+                setAccessToken(access);
+                setIsAuthenticated(true);
+            }
+
+            if (refresh) {
+                localStorage.setItem('refresh_token', refresh);
+            }
+
+            if (user) {
+                setUser(user);
+                // Optionally store user details in local storage if needed for persistence
+                localStorage.setItem('user_details', JSON.stringify(user));
+            }
+
         } catch (error) {
+            console.error("Login failed", error);
             throw error;
         }
     };

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import apiClient from '../../api/apiClient';
 import { boqService } from '../../services/boqService';
 import { mapBOQSummary } from '../../utils/boqSummaryMapper';
 import { projectService, type ProjectSearchResult } from '../../services/projectService';
-import { Collapse } from 'antd';
 
 interface BOQVersion {
     id: number;
@@ -47,11 +45,11 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
 
     // -- State --
     const [searchText, setSearchText] = useState('');
-    const [searchResults, setSearchResults] = useState<ProjectSearchResult[]>([]);
+    const [searchResults, setSearchResults] = useState<Project[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [showResults, setShowResults] = useState(false);
 
-    const [selectedProject, setSelectedProject] = useState<ProjectSearchResult | null>(null);
+    const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [projectMode, setProjectMode] = useState<"AREA_WISE" | "PROJECT_LEVEL">("AREA_WISE");
     const [versions, setVersions] = useState<BOQVersion[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<BOQVersion | null>(null);
@@ -72,51 +70,51 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
 
     // -- API Wrappers --
 
-  const loadBOQDetail = useCallback(async (boqId: number) => {
-    setLoading(true);
-    try {
-        const data = await boqService.getBOQSummaryDetail(boqId);
-        console.log('Fetched BOQ Detail:', data);
-        if (data) {
-            // Group PRODUCT, DRIVER, ACCESSORY items into logical rows
-            const items = data.items || [];
-            const groupedItems = [];
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.item_type === "PRODUCT") {
-                    // Look ahead for driver and accessory
-                    const driver = items[i + 1]?.item_type === "DRIVER" ? items[i + 1] : null;
-                    const accessory = items[i + 2]?.item_type === "ACCESSORY" ? items[i + 2] : null;
+    const loadBOQDetail = useCallback(async (boqId: number) => {
+        setLoading(true);
+        try {
+            const data = await boqService.getBOQSummaryDetail(boqId);
+            console.log('Fetched BOQ Detail:', data);
+            if (data) {
+                // Group PRODUCT, DRIVER, ACCESSORY items into logical rows
+                const items = data.items || [];
+                const groupedItems = [];
+                for (let i = 0; i < items.length; i++) {
+                    const item = items[i];
+                    if (item.item_type === "PRODUCT") {
+                        // Look ahead for driver and accessory
+                        const driver = items[i + 1]?.item_type === "DRIVER" ? items[i + 1] : null;
+                        const accessory = items[i + 2]?.item_type === "ACCESSORY" ? items[i + 2] : null;
 
-                    groupedItems.push({
-                        id: item.id,
-                        area_name: item.area_name || '',
-                        product_name: item.product_details?.name || '-',
-                        driver_name: driver?.driver_details?.driver_code || '-',
-                        accessories_names: accessory?.accessory_details?.name || '-',
-                        quantity: item.quantity,
-                        unit_price: item.unit_price,
-                        total_price: item.final_price,
-                    });
+                        groupedItems.push({
+                            id: item.id,
+                            area_name: item.area_name || '',
+                            product_name: item.product_details?.name || '-',
+                            driver_name: driver?.driver_details?.driver_code || '-',
+                            accessories_names: accessory?.accessory_details?.name || '-',
+                            quantity: item.quantity,
+                            unit_price: item.unit_price,
+                            total_price: item.final_price,
+                        });
 
-                    // Skip the next items if they were used
-                    if (driver) i++;
-                    if (accessory) i++;
+                        // Skip the next items if they were used
+                        if (driver) i++;
+                        if (accessory) i++;
+                    }
                 }
+                console.log('Grouped BOQ Items:', groupedItems);
+                setBoqItems(groupedItems);
+                const mapped = mapBOQSummary(data);
+                setSummary(mapped);
+                setMarginPercent(data.margin_percent || 0);
             }
-            console.log('Grouped BOQ Items:', groupedItems);
-            setBoqItems(groupedItems);
-            const mapped = mapBOQSummary(data);
-            setSummary(mapped);
-            setMarginPercent(data.margin_percent || 0);
+        } catch (err) {
+            console.error("Failed to load BOQ detail", err);
+            setError("Failed to load BOQ items.");
+        } finally {
+            setLoading(false);
         }
-    } catch (err) {
-        console.error("Failed to load BOQ detail", err);
-        setError("Failed to load BOQ items.");
-    } finally {
-        setLoading(false);
-    }
-}, []);
+    }, []);
     const loadVersionsList = useCallback(async (projId: number) => {
         setLoading(true);
         try {
@@ -149,12 +147,15 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
         if (effectiveProjectId) {
             const fetchProj = async () => {
                 try {
-                    const res = await apiClient.get(`/projects/projects/${effectiveProjectId}/`);
-                    if (res.data) {
-                        setSelectedProject(res.data);
-                        setProjectMode(res.data.inquiry_type || 'AREA_WISE');
-                        setSearchText(res.data.name);
-                        loadVersionsList(res.data.id);
+                    const data = await projectService.getProject(effectiveProjectId);
+                    if (data) {
+                        setSelectedProject(data);
+                        // Assuming new Project model doesn't strictly have inquiry_type on top level, 
+                        // defaulting or checking if it exists in extended type. 
+                        // For now default to AREA_WISE as safe fallback
+                        setProjectMode((data as any).inquiry_type || 'AREA_WISE');
+                        setSearchText(data.name);
+                        loadVersionsList(data.id);
                     }
                 } catch (err) {
                     console.error("Project fetch failed", err);
@@ -171,15 +172,25 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
         }
     }, [selectedVersion, loadBOQDetail]);
 
-    // 3. Search logic
+    // 3. Search logic (client-side filtering)
     useEffect(() => {
         const timer = setTimeout(async () => {
             if (searchText.length >= 2) {
                 setIsSearching(true);
-                const results = await projectService.searchProjects(searchText);
-                setSearchResults(results);
-                setIsSearching(false);
-                setShowResults(true);
+                try {
+                    const allProjects = await projectService.getProjects();
+                    // Basic client-side filter
+                    const filtered = (Array.isArray(allProjects) ? allProjects : allProjects.results || []).filter((p: Project) =>
+                        p.name.toLowerCase().includes(searchText.toLowerCase()) ||
+                        p.project_code.toLowerCase().includes(searchText.toLowerCase())
+                    );
+                    setSearchResults(filtered);
+                    setShowResults(true);
+                } catch (e) {
+                    console.error("Search failed", e);
+                } finally {
+                    setIsSearching(false);
+                }
             } else {
                 setSearchResults([]);
                 setShowResults(false);
@@ -201,7 +212,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
 
     // -- Handlers --
 
-    const handleProjectSelect = (proj: ProjectSearchResult) => {
+    const handleProjectSelect = (proj: Project) => {
         setSelectedProject(proj);
         setSearchText(proj.name);
         setShowResults(false);
@@ -214,8 +225,11 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
         try {
             await boqService.applyMargin(selectedVersion.id, marginPercent);
             await loadBOQDetail(selectedVersion.id);
-        } catch (err) {
-            alert("Failed to apply margin.");
+        } catch (err: any) {
+            const msg =
+                err?.response?.data?.detail ||
+                "Failed to apply margin.";
+            alert(msg);
         } finally {
             setLoading(false);
         }
@@ -307,84 +321,84 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
     };
     // ================= GROUP DATA =================
 
-const productRows: any[] = [];
-const driverRows: any[] = [];
-const accessoryRows: any[] = [];
+    const productRows: any[] = [];
+    const driverRows: any[] = [];
+    const accessoryRows: any[] = [];
 
-const productMap: Record<string, any> = {};
-const driverMap: Record<string, any> = {};
-const accessoryMap: Record<string, any> = {};
-console.log("Raw BOQ Items:", boqItems);
-boqItems.forEach(item => {
+    const productMap: Record<string, any> = {};
+    const driverMap: Record<string, any> = {};
+    const accessoryMap: Record<string, any> = {};
+    console.log("Raw BOQ Items:", boqItems);
+    boqItems.forEach(item => {
 
-    const price = Number(item.total_price) || 0;
+        const price = Number(item.total_price) || 0;
 
-    // PRODUCT
-    if (!productMap[item.product_name]) {
-        productMap[item.product_name] = { name: item.product_name, qty: 0, amount: 0 };
-    }
-    productMap[item.product_name].qty += Number(item.quantity) || 0;
-    productMap[item.product_name].amount += price;
-
-    // DRIVER
-    if (item.driver_name && item.driver_name !== '-') {
-        if (!driverMap[item.driver_name]) {
-            driverMap[item.driver_name] = { name: item.driver_name, qty: 0, amount: 0 };
+        // PRODUCT
+        if (!productMap[item.product_name]) {
+            productMap[item.product_name] = { name: item.product_name, qty: 0, amount: 0 };
         }
-        driverMap[item.driver_name].qty += Number(item.quantity) || 0;
-        driverMap[item.driver_name].amount += price;
-    }
+        productMap[item.product_name].qty += Number(item.quantity) || 0;
+        productMap[item.product_name].amount += price;
 
-    // ACCESSORY
-    if (item.accessories_names && item.accessories_names !== '-') {
-        if (!accessoryMap[item.accessories_names]) {
-            accessoryMap[item.accessories_names] = { name: item.accessories_names, qty: 0, amount: 0 };
+        // DRIVER
+        if (item.driver_name && item.driver_name !== '-') {
+            if (!driverMap[item.driver_name]) {
+                driverMap[item.driver_name] = { name: item.driver_name, qty: 0, amount: 0 };
+            }
+            driverMap[item.driver_name].qty += Number(item.quantity) || 0;
+            driverMap[item.driver_name].amount += price;
         }
-        accessoryMap[item.accessories_names].qty += Number(item.quantity) || 0;
-        accessoryMap[item.accessories_names].amount += price;
-    }
-});
 
-console.log("Product Map:", productMap);
-const productsData = Object.values(productMap);
-const driversData = Object.values(driverMap);
-const accessoriesData = Object.values(accessoryMap);
+        // ACCESSORY
+        if (item.accessories_names && item.accessories_names !== '-') {
+            if (!accessoryMap[item.accessories_names]) {
+                accessoryMap[item.accessories_names] = { name: item.accessories_names, qty: 0, amount: 0 };
+            }
+            accessoryMap[item.accessories_names].qty += Number(item.quantity) || 0;
+            accessoryMap[item.accessories_names].amount += price;
+        }
+    });
 
-console.log("productsData:", productsData);
-const renderSection = (title: string, rows: any[]) => {
+    console.log("Product Map:", productMap);
+    const productsData = Object.values(productMap);
+    const driversData = Object.values(driverMap);
+    const accessoriesData = Object.values(accessoryMap);
 
-    const total = rows.reduce((s, r) => s + r.amount, 0);
+    console.log("productsData:", productsData);
+    const renderSection = (title: string, rows: any[]) => {
 
-    return {
-        key: title,
-        label: (
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontWeight: 600 }}>
-                <span>{title} ({rows.length})</span>
-                <span style={{ color: '#2563eb' }}>{formatCurrency(total)}</span>
-            </div>
-        ),
-        children: (
-            <table className="erp-table compact">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th className="text-right">Qty</th>
-                        <th className="text-right">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {rows.map((r, i) => (
-                        <tr key={i}>
-                            <td>{r.name}</td>
-                            <td className="text-right">{r.qty}</td>
-                            <td className="text-right">{formatCurrency(r.amount)}</td>
+        const total = rows.reduce((s, r) => s + r.amount, 0);
+
+        return {
+            key: title,
+            label: (
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontWeight: 600 }}>
+                    <span>{title} ({rows.length})</span>
+                    <span style={{ color: '#2563eb' }}>{formatCurrency(total)}</span>
+                </div>
+            ),
+            children: (
+                <table className="erp-table compact">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th className="text-right">Qty</th>
+                            <th className="text-right">Amount</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-        )
+                    </thead>
+                    <tbody>
+                        {rows.map((r, i) => (
+                            <tr key={i}>
+                                <td>{r.name}</td>
+                                <td className="text-right">{r.qty}</td>
+                                <td className="text-right">{formatCurrency(r.amount)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )
+        };
     };
-};
 
     return (
         <div style={styles.container}>
@@ -510,16 +524,16 @@ const renderSection = (title: string, rows: any[]) => {
                         ) : boqItems.length === 0 ? (
                             <div className="table-empty">No BOQ items generated.</div>
                         ) : (
-                           <Collapse
-    accordion
-    defaultActiveKey={['PRODUCTS']}
-    style={{ marginTop: 8 }}
-    items={[
-        renderSection("PRODUCTS", productsData),
-        renderSection("DRIVERS", driversData),
-        renderSection("ACCESSORIES", accessoriesData),
-    ]}
-/>
+                            <Collapse
+                                accordion
+                                defaultActiveKey={['PRODUCTS']}
+                                style={{ marginTop: 8 }}
+                                items={[
+                                    renderSection("PRODUCTS", productsData),
+                                    renderSection("DRIVERS", driversData),
+                                    renderSection("ACCESSORIES", accessoriesData),
+                                ]}
+                            />
 
                         )}
                     </div>

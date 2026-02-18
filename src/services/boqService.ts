@@ -26,7 +26,7 @@ export const boqService = {
     applyMargin: async (boqId: number | string, percent: number) => {
         try {
             const response = await apiClient.post(`/boq/apply-margin/${boqId}/`, {
-                margin_percent: percent
+                markup_pct: percent   // ✅ correct key
             });
             return response.data;
         } catch (error) {

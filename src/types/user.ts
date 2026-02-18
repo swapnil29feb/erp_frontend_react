@@ -11,6 +11,7 @@ export type User = {
 export type AuthResponse = {
     access: string;
     refresh: string;
+    user?: User;
 }
 
 export const AUTH_VERSION = '1.0';

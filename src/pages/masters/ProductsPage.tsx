@@ -16,7 +16,7 @@ const ProductsPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchText, setSearchText] = useState('');
-const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Modal states
     const [isFormModalVisible, setIsFormModalVisible] = useState(false);
@@ -43,12 +43,12 @@ const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleSearch = (value: string) => {
         setCurrentPage(1);
-        
+
         // Clear previous debounce timer
         if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
         }
-        
+
         // Set new debounce timer (500ms delay)
         debounceTimerRef.current = setTimeout(() => {
             setSearchText(value);
@@ -68,50 +68,49 @@ const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     };
 
     const handleView = async (record: Product) => {
-        setSelectedProduct(record);
-        setIsDetailVisible(true);
         try {
-            const full = await productService.getProduct(record.id);
-            setSelectedProduct(full);
-        } catch (e) {
-            console.error('Failed to load full product details');
+            const product = await productService.getProductDetails(record.id);
+            setSelectedProduct(product);
+            setIsDetailVisible(true);
+        } catch (error) {
+            console.error("Failed to load full product details", error);
         }
     };
 
     const handleFormSaved = async (formData: Partial<Product>) => {
-    try {
+        try {
 
-        // 🔹 CLEAN DATA (remove "" and convert numbers)
-        const cleaned: any = {};
-        Object.entries(formData).forEach(([key, value]) => {
-            if (value === "" || value === undefined || value === null) return;
+            // 🔹 CLEAN DATA (remove "" and convert numbers)
+            const cleaned: any = {};
+            Object.entries(formData).forEach(([key, value]) => {
+                if (value === "" || value === undefined || value === null) return;
 
-            // convert numeric strings to numbers
-            if (!isNaN(value as any) && value !== true && value !== false) {
-                cleaned[key] = Number(value);
+                // convert numeric strings to numbers
+                if (!isNaN(value as any) && value !== true && value !== false) {
+                    cleaned[key] = Number(value);
+                } else {
+                    cleaned[key] = value;
+                }
+            });
+
+            if (formMode === 'create') {
+                await productService.createProduct(cleaned);
+                message.success('Product created successfully');
             } else {
-                cleaned[key] = value;
+                if (selectedProduct) {
+                    await productService.updateProduct(selectedProduct.id, cleaned);
+                    message.success('Product updated successfully');
+                }
             }
-        });
 
-        if (formMode === 'create') {
-            await productService.createProduct(cleaned);
-            message.success('Product created successfully');
-        } else {
-            if (selectedProduct) {
-                await productService.updateProduct(selectedProduct.id, cleaned);
-                message.success('Product updated successfully');
-            }
+            setIsFormModalVisible(false);
+            fetchProducts(currentPage, searchText);
+
+        } catch (err) {
+            console.log(err);
+            message.error('Operation failed');
         }
-
-        setIsFormModalVisible(false);
-        fetchProducts(currentPage, searchText);
-
-    } catch (err) {
-        console.log(err);
-        message.error('Operation failed');
-    }
-};
+    };
 
     const handleCopyCode = (code?: string) => {
         if (code) {
@@ -242,61 +241,92 @@ const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
                 width={1000}
             >
                 {selectedProduct && (
-                    <Row gutter={24}>
-                        <Col span={24}>
-                            <Card title="Technical Specifications" size="small" style={{ marginBottom: 20 }}>
-                                <Row gutter={[16, 24]}>
-                                    <Col span={24}>
-                                        <div style={{ textAlign: 'center', background: '#f8fafc', padding: 20, borderRadius: 8 }}>
-                                            <Image src={selectedProduct.visual_image} height={200} fallback="https://via.placeholder.com/200?text=Visual+Unavailable" />
-                                        </div>
-                                    </Col>
-                                    <Col span={12}>
-                                        <Text type="secondary">Order Code</Text>
-                                        <div><Text code>{selectedProduct.order_code}</Text></div>
-                                    </Col>
-                                    <Col span={12}>
-                                        <Text type="secondary">Make</Text>
-                                        <div><Text strong>{selectedProduct.make}</Text></div>
-                                    </Col>
-                                    <Col span={8}>
-                                        <Text type="secondary">Wattage</Text>
-                                        <div><Text strong>{selectedProduct.wattage}W</Text></div>
-                                    </Col>
-                                    <Col span={8}>
-                                        <Text type="secondary">Lumen Output</Text>
-                                        <div><Text strong>{selectedProduct.lumen_output} lm</Text></div>
-                                    </Col>
-                                    <Col span={8}>
-                                        <Text type="secondary">CCT</Text>
-                                        <div><Text strong>{selectedProduct.cct_kelvin || selectedProduct.cct}K</Text></div>
-                                    </Col>
-                                    <Col span={8}>
-                                        <Text type="secondary">Beam Angle</Text>
-                                        <div><Text strong>{selectedProduct.beam_angle_degree || selectedProduct.beam_angle}°</Text></div>
-                                    </Col>
-                                    <Col span={8}>
-                                        <Text type="secondary">IP Rating</Text>
-                                        <div><Text strong>IP{selectedProduct.ip_rating || '20'}</Text></div>
-                                    </Col>
-                                    <Col span={8}>
-                                        <Text type="secondary">Status</Text>
-                                        <div>
-                                            <Tag color={selectedProduct.is_active ? 'green' : 'red'}>
-                                                {selectedProduct.is_active ? 'ACTIVE' : 'INACTIVE'}
-                                            </Tag>
-                                        </div>
-                                    </Col>
-                                    <Col span={24}>
-                                        <Text type="secondary">Description</Text>
-                                        <Paragraph style={{ marginTop: 4 }}>
-                                            {selectedProduct.description || 'No description provided.'}
-                                        </Paragraph>
-                                    </Col>
-                                </Row>
-                            </Card>
-                        </Col>
-                    </Row>
+                    <div style={{ padding: '0 24px' }}>
+                        <div className="product-images" style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+                            {selectedProduct.visual_image && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <img src={selectedProduct.visual_image} alt="Visual" width="200" style={{ borderRadius: '8px', border: '1px solid #eee' }} />
+                                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>Visual</div>
+                                </div>
+                            )}
+                            {selectedProduct.illustrative_details && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <img src={selectedProduct.illustrative_details} alt="Illustrative" width="200" style={{ borderRadius: '8px', border: '1px solid #eee' }} />
+                                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>Illustrative</div>
+                                </div>
+                            )}
+                            {selectedProduct.photometrics && (
+                                <div style={{ textAlign: 'center' }}>
+                                    <img src={selectedProduct.photometrics} alt="Photometrics" width="200" style={{ borderRadius: '8px', border: '1px solid #eee' }} />
+                                    <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>Photometrics</div>
+                                </div>
+                            )}
+                        </div>
+
+                        <Card title="Technical Specifications" size="small" style={{ marginBottom: 20 }}>
+                            <Row gutter={[16, 24]}>
+                                <Col span={12}>
+                                    <Text type="secondary">Order Code</Text>
+                                    <div><Text code>{selectedProduct.order_code}</Text></div>
+                                </Col>
+                                <Col span={12}>
+                                    <Text type="secondary">Make</Text>
+                                    <div><Text strong>{selectedProduct.make}</Text></div>
+                                </Col>
+                                <Col span={8}>
+                                    <Text type="secondary">Wattage</Text>
+                                    <div><Text strong>{selectedProduct.wattage}W</Text></div>
+                                </Col>
+                                <Col span={8}>
+                                    <Text type="secondary">Lumen Output</Text>
+                                    <div><Text strong>{selectedProduct.lumen_output} lm</Text></div>
+                                </Col>
+                                <Col span={8}>
+                                    <Text type="secondary">CCT</Text>
+                                    <div><Text strong>{selectedProduct.cct_kelvin || selectedProduct.cct}K</Text></div>
+                                </Col>
+                                <Col span={8}>
+                                    <Text type="secondary">Beam Angle</Text>
+                                    <div><Text strong>{selectedProduct.beam_angle_degree || selectedProduct.beam_angle}°</Text></div>
+                                </Col>
+                                <Col span={8}>
+                                    <Text type="secondary">IP Rating</Text>
+                                    <div><Text strong>IP{selectedProduct.ip_rating || '20'}</Text></div>
+                                </Col>
+                                <Col span={8}>
+                                    <Text type="secondary">Status</Text>
+                                    <div>
+                                        <Tag color={selectedProduct.is_active ? 'green' : 'red'}>
+                                            {selectedProduct.is_active ? 'ACTIVE' : 'INACTIVE'}
+                                        </Tag>
+                                    </div>
+                                </Col>
+                                <Col span={24}>
+                                    <Text type="secondary">Description</Text>
+                                    <Paragraph style={{ marginTop: 4 }}>
+                                        {selectedProduct.description || 'No description provided.'}
+                                    </Paragraph>
+                                </Col>
+                            </Row>
+                        </Card>
+
+                        <div style={{ marginTop: '24px' }}>
+                            <h3 style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px' }}>Recent Activity</h3>
+                            {selectedProduct.audit_logs && selectedProduct.audit_logs.length > 0 ? (
+                                <ul style={{ listStyle: 'none', padding: 0 }}>
+                                    {selectedProduct.audit_logs.map((log, index) => (
+                                        <li key={index} style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0', fontSize: '13px' }}>
+                                            <Tag color="blue" style={{ textTransform: 'uppercase' }}>{log.action}</Tag>
+                                            <Text strong>{log.user}</Text>
+                                            <Text type="secondary" style={{ marginLeft: '8px' }}>at {new Date(log.timestamp).toLocaleString()}</Text>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <Text type="secondary">No recent activity recorded.</Text>
+                            )}
+                        </div>
+                    </div>
                 )}
             </Modal>
 
