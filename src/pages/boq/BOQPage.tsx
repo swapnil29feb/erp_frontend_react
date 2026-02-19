@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { boqService } from '../../services/boqService';
 import { mapBOQSummary } from '../../utils/boqSummaryMapper';
-import { projectService, type ProjectSearchResult } from '../../services/projectService';
+import { Collapse } from 'antd';
+import { projectService, type Project } from '../../services/projectService';
 
 interface BOQVersion {
     id: number;
