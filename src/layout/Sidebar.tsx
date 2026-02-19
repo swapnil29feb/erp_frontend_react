@@ -1,14 +1,16 @@
 
 import type { FC } from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 const Sidebar: FC = () => {
     const { logout } = useAuth();
+    const [collapsed, setCollapsed] = useState(false);
 
     const styles = {
         sidebar: {
-            width: '240px',
+            width: collapsed ? '60px' : '240px',
             height: '100vh',
             backgroundColor: '#111827',
             color: '#f3f4f6',
@@ -16,17 +18,30 @@ const Sidebar: FC = () => {
             flexDirection: 'column' as const,
             flexShrink: 0,
             borderRight: '1px solid #1f2937',
+            transition: 'width 0.2s',
         },
         logoArea: {
             padding: '24px 20px',
             borderBottom: '1px solid #1f2937',
             marginBottom: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
         },
         logoText: {
             fontSize: '18px',
             fontWeight: '700',
             color: '#fff',
             letterSpacing: '0.01em',
+            display: collapsed ? 'none' : 'block',
+        },
+        toggleBtn: {
+            background: 'none',
+            border: 'none',
+            color: '#fff',
+            fontSize: '20px',
+            cursor: 'pointer',
+            marginLeft: collapsed ? 0 : '12px',
         },
         nav: {
             flex: 1,
@@ -118,41 +133,48 @@ const Sidebar: FC = () => {
             </style>
             <div style={styles.logoArea}>
                 <div style={styles.logoText}>Lighting ERP</div>
+                <button
+                    style={styles.toggleBtn}
+                    onClick={() => setCollapsed(c => !c)}
+                    title={collapsed ? 'Open Sidebar' : 'Close Sidebar'}
+                >
+                    {collapsed ? '➡️' : '⬅️'}
+                </button>
             </div>
 
             <nav style={styles.nav}>
                 <NavLink to="/dashboard" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.dashboard} />
-                    Dashboard
+                    {!collapsed && 'Dashboard'}
                 </NavLink>
                 <NavLink to="/projects" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.projects} />
-                    Projects
+                    {!collapsed && 'Projects'}
                 </NavLink>
 
-                <div style={styles.sectionHeader}>Masters</div>
+                <div style={styles.sectionHeader}>{!collapsed && 'Masters'}</div>
                 <NavLink to="/masters/products" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.products} />
-                    Products
+                    {!collapsed && 'Products'}
                 </NavLink>
                 <NavLink to="/masters/drivers" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.drivers} />
-                    Drivers
+                    {!collapsed && 'Drivers'}
                 </NavLink>
                 <NavLink to="/masters/accessories" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.accessories} />
-                    Accessories
+                    {!collapsed && 'Accessories'}
                 </NavLink>
 
                 <div style={{ height: '24px' }} />
 
                 <NavLink to="/reports" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.reports} />
-                    Reports
+                    {!collapsed && 'Reports'}
                 </NavLink>
                 <NavLink to="/settings" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.settings} />
-                    Settings
+                    {!collapsed && 'Settings'}
                 </NavLink>
             </nav>
 
@@ -163,7 +185,7 @@ const Sidebar: FC = () => {
                     className="sidebar-nav-item"
                 >
                     <Icon path={icons.logout} />
-                    Logout
+                    {!collapsed && 'Logout'}
                 </button>
             </div>
         </div>

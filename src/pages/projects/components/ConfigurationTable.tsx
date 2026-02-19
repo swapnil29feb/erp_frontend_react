@@ -1,202 +1,183 @@
 import React from 'react';
-import { Table, Button, Typography, Tag } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { Table, Typography, Divider } from 'antd';
+import { Collapse } from 'antd';
 
-const { Text, Title } = Typography;
+const { Title, Text } = Typography;
 
 interface ConfigurationTableProps {
     products: any[];
-    drivers: any[];
-    accessories: any[];
-    isLocked?: boolean;
-    // onUpdateQty: (id: number, qty: number) => void;
-    onDelete: (id: number) => void;
 }
 
-const ConfigurationTable: React.FC<ConfigurationTableProps> = ({
-    products,
-    drivers,
-    accessories,
-    isLocked = false,
-    // onUpdateQty,
-    onDelete
-}) => {
+const ConfigurationTable: React.FC<ConfigurationTableProps> = ({ products }) => {
 
-// console.log("products in ConfigurationTable:", products);
-// console.log(" accessories in ConfigurationTable:", accessories);
+    /* =========================================================
+       1️⃣ GROUP DATA (PRODUCT / DRIVER / ACCESSORY)
+    ========================================================= */
 
-// console.log("drivers in ConfigurationTable:", drivers);
-    // STEP 6: Fix totals inside table to include nested components
-    const productTotal = products.reduce(
-        (sum, p) => sum + (p.quantity * (p.product_detail?.price || 0)),
-        0
-    );
+    const productMap: Record<string, any> = {};
+    const driverMap: Record<string, any> = {};
+    const accessoryMap: Record<string, any> = {};
 
-    const driverTotal = drivers.reduce(
-        (sum, d) => sum + (d.quantity * (d.driver_detail?.price || 0)),
-        0
-    ) + products.reduce(
-        (sum, p) => sum + (p.quantity * (p.driverData?.price || 0)),
-        0
-    );
+    products.forEach((p) => {
+        const qty = p.quantity || 1;
 
-   const accessoryTotal =
-    // standalone accessories
-    accessories.reduce(
-        (sum, a) => sum + (a.quantity * (a.accessory_detail?.price || 0)),
-        0
-    )
-    +
-    // accessories attached to products
-    products.reduce((sum, p) => {
+        /* ---------------- PRODUCT ---------------- */
+        const pKey = p.product_detail?.order_code || p.product_detail?.name || "unknown";
+        const pPrice = p.product_detail?.base_price || p.product_detail?.price || 0;
 
-        const accessoryUnitPrice = (p.accessoriesData || []).reduce(
-            (accSum: number, acc: any) => accSum + (acc.price || 0),
-            0
-        );
+        if (!productMap[pKey]) {
+            productMap[pKey] = {
+                ...p.product_detail,
+                quantity: 0,
+                total: 0
+            };
+        }
 
-        return sum + (p.quantity * accessoryUnitPrice);
+        productMap[pKey].quantity += qty;
+        productMap[pKey].total += pPrice * qty;
 
-    }, 0);
+        /* ---------------- DRIVER ---------------- */
+        if (p.driverData) {
+            const dKey = p.driverData.order_code;
+            const dPrice = p.driverData.price || 0;
 
+            if (!driverMap[dKey]) {
+                driverMap[dKey] = {
+                    ...p.driverData,
+                    quantity: 0,
+                    total: 0
+                };
+            }
 
+            driverMap[dKey].quantity += qty;
+            driverMap[dKey].total += dPrice * qty;
+        }
+
+        /* ---------------- ACCESSORIES ---------------- */
+        (p.accessoriesData || []).forEach((acc: any) => {
+            const aKey = acc.order_code;
+            const aPrice = acc.price || 0;
+
+            if (!accessoryMap[aKey]) {
+                accessoryMap[aKey] = {
+                    ...acc,
+                    quantity: 0,
+                    total: 0
+                };
+            }
+
+            accessoryMap[aKey].quantity += qty;
+            accessoryMap[aKey].total += aPrice * qty;
+        });
+    });
+
+    const productData = Object.values(productMap);
+    const driverData = Object.values(driverMap);
+    const accessoryData = Object.values(accessoryMap);
+
+    /* =========================================================
+       2️⃣ TOTALS
+    ========================================================= */
+
+    const productTotal = productData.reduce((s: number, p: any) => s + p.total, 0);
+    const driverTotal = driverData.reduce((s: number, d: any) => s + d.total, 0);
+    const accessoryTotal = accessoryData.reduce((s: number, a: any) => s + a.total, 0);
     const grandTotal = productTotal + driverTotal + accessoryTotal;
 
-    const productColumns = [
-        {
-            title: 'Make',
-            key: 'make',
-            render: (_: any, row: any) => row.product_detail?.make || "-"
-        },
-        {
-            title: 'Order Code',
-            key: 'code',
-            render: (_: any, row: any) => (
-                <Text strong>{row.product_detail?.order_code || "-"}</Text>
-            )
-        },
-        {
-            title: 'Wattage',
-            key: 'wattage',
-            render: (_: any, row: any) => row.product_detail?.wattage
-                ? `${row.product_detail.wattage} W`
-                : "-"
-        },
-        {
-            title: 'Driver',
-            key: 'driver',
-            render: (_: any, row: any) => row.driverData ? (
-                <div style={{ fontSize: '12px' }}>
-                    <div style={{ fontWeight: 600 }}>{row.driverData.make}</div>
-                    <div style={{ color: '#64748b' }}>{row.driverData.order_code}</div>
-                </div>
-            ) : (
-                <Text type="secondary" style={{ fontSize: '11px' }}>No driver</Text>
-            )
-        },
-        {
-            title: 'Accessories',
-            key: 'accessories',
-            render: (_: any, row: any) => {
-                if (!row.accessoriesData || row.accessoriesData.length === 0) {
-                    return <Text type="secondary" style={{ fontSize: '11px' }}>No accessories</Text>;
-                }
-                return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                        {row.accessoriesData.map((acc: any) => (
-                            <Tag key={acc.id || acc.accessory_id} style={{ margin: 0, fontSize: '11px' }}>
-                                {acc.order_code}
-                            </Tag>
-                        ))}
-                    </div>
-                );
-            }
-        },
-        {
-            title: 'Qty',
-            key: 'qty',
-            width: 100,
-            render: (_: any, row: any) => (
-                <input
-                    type="number"
-                    min={1}
-                    value={row.quantity || 1}
-                    // onChange={(e) =>
-                    //     // onUpdateQty(row.id, parseInt(e.target.value || "1"))
-                    // }
-                    disabled={true}
-                    style={{
-                        width: "70px",
-                        padding: "4px",
-                        textAlign: "center",
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
-                        backgroundColor: isLocked ? '#f9fafb' : 'white',
-                        cursor: isLocked ? 'not-allowed' : 'auto'
-                    }}
-                />
-            )
-        },
-        {
-            title: 'Total',
-            key: 'total',
-            align: 'right' as const,
-            render: (_: any, row: any) => {
-                const productPrice = row.product_detail?.base_price || row.product_detail?.price || 0;
-                const driverPrice = row.driverData?.price || 0;
-                const accessoriesPrice = (row.accessoriesData || []).reduce((sum: number, acc: any) => sum + (acc.price || 0), 0);
-                const total = (productPrice + driverPrice + accessoriesPrice) * (row.quantity || 1);
+    /* =========================================================
+       3️⃣ COLUMNS
+    ========================================================= */
 
-                return (
-                    <Text strong style={{ color: '#1e293b' }}>
-                        ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </Text>
-                );
-            }
-        },
-        // {
-        //     title: '',
-        //     key: 'actions',
-        //     width: 50,
-        //     render: (_: any, row: any) => (
-        //         <Button type="text" danger icon={<DeleteOutlined />} onClick={() => onDelete(row.id)} disabled={isLocked} />
-        //     )
-        // }
+    const currency = (n: number) =>
+        `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const productColumns = [
+        { title: "Make", dataIndex: "make" },
+        { title: "Order Code", dataIndex: "order_code" },
+        { title: "Wattage", render: (_:any,r:any)=> r.wattage?`${r.wattage} W`:"-" },
+        { title: "Qty", dataIndex: "quantity", align:"center" },
+        { title: "Unit Price", render: (_:any,r:any)=>currency(r.base_price||r.price||0)},
+        { title: "Total", render: (_:any,r:any)=>currency(r.total)},
     ];
 
-    const allData = [...products, ...drivers, ...accessories];
+    const driverColumns = [
+        { title: "Make", dataIndex: "make" },
+        { title: "Order Code", dataIndex: "order_code" },
+        { title: "Qty", dataIndex: "quantity", align:"center" },
+        { title: "Unit Price", render: (_:any,r:any)=>currency(r.price||0)},
+        { title: "Total", render: (_:any,r:any)=>currency(r.total)},
+    ];
 
-    return (
-        <div className="configuration-table-wrapper">
-            <Table
-                dataSource={allData}
-                columns={productColumns}
-                pagination={false}
-                size="middle"
-                rowKey="id"
-                footer={() => (
-                    <div style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '8px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <Text type="secondary">Product Total:</Text>
-                            <Text strong>₹{productTotal.toLocaleString('en-IN')}</Text>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <Text type="secondary">Driver Total:</Text>
-                            <Text strong>₹{driverTotal.toLocaleString('en-IN')}</Text>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <Text type="secondary">Accessory Total:</Text>
-                            <Text strong>₹{accessoryTotal.toLocaleString('en-IN')}</Text>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '8px' }}>
-                            <Title level={5} style={{ margin: 0 }}>Grand Total:</Title>
-                            <Title level={5} style={{ margin: 0, color: '#2563eb' }}>₹{grandTotal.toLocaleString('en-IN')}</Title>
-                        </div>
+    const accessoryColumns = [
+        { title: "Order Code", dataIndex: "order_code" },
+        { title: "Description", dataIndex: "description" },
+        { title: "Qty", dataIndex: "quantity", align:"center" },
+        { title: "Unit Price", render: (_:any,r:any)=>currency(r.price||0)},
+        { title: "Total", render: (_:any,r:any)=>currency(r.total)},
+    ];
+const renderTableSection = (
+    title: string,
+    data: any[],
+    columns: any[],
+    total: number
+) => (
+    <Collapse
+        defaultActiveKey={[title]}
+        style={{ marginBottom: 18 }}
+        items={[
+            {
+                key: title,
+                label: (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                        <span style={{ fontWeight: 600 }}>{title}</span>
+                        <span style={{ color: '#2563eb', fontWeight: 600 }}>
+                            Total: {currency(total)}
+                        </span>
                     </div>
-                )}
-            />
+                ),
+                children: (
+                    <Table
+                        dataSource={data}
+                        columns={columns}
+                        pagination={false}
+                        rowKey="order_code"
+                    />
+                )
+            }
+        ]}
+    />
+);
+
+    /* =========================================================
+       4️⃣ RENDER
+    ========================================================= */
+
+return (
+    <div>
+
+        {renderTableSection("Products", productData, productColumns, productTotal)}
+
+        {renderTableSection("Drivers", driverData, driverColumns, driverTotal)}
+
+        {renderTableSection("Accessories", accessoryData, accessoryColumns, accessoryTotal)}
+
+        <div style={{
+            textAlign: 'right',
+            fontSize: 18,
+            marginTop: 20,
+            padding: 16,
+            background: '#f8fafc',
+            borderRadius: 8
+        }}>
+            <Text strong>Grand Total: </Text>
+            <Text strong style={{ color: '#1677ff', fontSize: 20 }}>
+                {currency(grandTotal)}
+            </Text>
         </div>
-    );
+
+    </div>
+);
+
 };
 
 export default ConfigurationTable;

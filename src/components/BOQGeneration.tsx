@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import type { Project } from '../types';
 import { boqApi } from '../api_manual';
 import { useAuth } from '../auth/AuthContext';
 import { hasPermission } from '../utils/permission';
+import { Collapse } from 'antd';
 
 interface BOQGenerationProps {
     project: Project;
@@ -21,6 +22,7 @@ const BOQGeneration: React.FC<BOQGenerationProps> = ({ project, onStatusChange }
         try {
             const response = await boqApi.getSummary(project.id);
             if (response.success && response.data) {
+                console.log('Fetched BOQ Summary:', response.data);
                 setBoqSummary(response.data);
                 // Assume the response contains boq_id and status
                 if (response.data.boq_id) setBoqId(response.data.boq_id);
@@ -41,10 +43,15 @@ const BOQGeneration: React.FC<BOQGenerationProps> = ({ project, onStatusChange }
         fetchBOQSummary();
     }, [project.id]);
 
+useEffect(()=>{
+    console.log('BOQ Summary Updated:', boqSummary);
+},[boqSummary])
+
     const handleGenerateBOQ = async () => {
         setLoading(true);
         try {
             const response = await boqApi.generate(project.id);
+            console.log('BOQ Generation Response:', response);
             if (response.success) {
                 await fetchBOQSummary();
             } else {
@@ -56,6 +63,7 @@ const BOQGeneration: React.FC<BOQGenerationProps> = ({ project, onStatusChange }
             setLoading(false);
         }
     };
+    
 
     const handleApplyMargin = async () => {
         if (!boqId || status === 'APPROVED') return;
@@ -122,39 +130,70 @@ const BOQGeneration: React.FC<BOQGenerationProps> = ({ project, onStatusChange }
 
     const isLocked = status === 'APPROVED';
     const { user } = useAuth();
+const renderGroup = (title: string, items: any[]) => {
 
-    const renderGroup = (title: string, items: any[]) => (
-        <div key={title} className="boq-group" style={{ marginBottom: '24px' }}>
-            <h3 style={{ borderBottom: '2px solid var(--border-color)', paddingBottom: '8px', marginBottom: '16px', color: 'var(--primary)' }}>
-                {title} ({items.length})
-            </h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                    <tr style={{ background: 'var(--bg-tertiary)', textAlign: 'left' }}>
-                        <th style={{ padding: '12px' }}>Name</th>
-                        <th style={{ padding: '12px', textAlign: 'center' }}>Quantity</th>
-                        <th style={{ padding: '12px', textAlign: 'right' }}>Unit Price</th>
-                        <th style={{ padding: '12px', textAlign: 'right' }}>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {items.map((item: any, idx: number) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                            <td style={{ padding: '12px' }}>{item.name || item.product_name || item.driver_name || item.accessory_name}</td>
-                            <td style={{ padding: '12px', textAlign: 'center' }}>{item.quantity}</td>
-                            <td style={{ padding: '12px', textAlign: 'right' }}>
-                                {/* Price override logic can be added here if backend supports individual item updates via API */}
-                                {item.unit_price?.toFixed(2) || '0.00'}
-                            </td>
-                            <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>
-                                {item.total_price?.toFixed(2) || '0.00'}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+    const total = items.reduce((sum, i) => sum + (i.total_price || 0), 0);
+
+    return (
+        <Collapse
+            key={title}
+            defaultActiveKey={[title]}
+            style={{ marginBottom: 18 }}
+            items={[
+                {
+                    key: title,
+                    label: (
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            fontWeight: 600
+                        }}>
+                            <span>{title} ({items.length})</span>
+                            <span style={{ color: '#2563eb' }}>
+                                ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </span>
+                        </div>
+                    ),
+                    children: (
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr style={{ background: 'var(--bg-tertiary)', textAlign: 'left' }}>
+                                    <th style={{ padding: '12px' }}>Name</th>
+                                    <th style={{ padding: '12px', textAlign: 'center' }}>Quantity</th>
+                                    <th style={{ padding: '12px', textAlign: 'right' }}>Unit Price</th>
+                                    <th style={{ padding: '12px', textAlign: 'right' }}>Total</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {items.map((item: any, idx: number) => (
+                                    <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                        <td style={{ padding: '12px' }}>
+                                            {item.name || item.product_name || item.driver_name || item.accessory_name}
+                                        </td>
+
+                                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                                            {item.quantity}
+                                        </td>
+
+                                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                                            ₹{(item.unit_price || 0).toFixed(2)}
+                                        </td>
+
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>
+                                            ₹{(item.total_price || 0).toFixed(2)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )
+                }
+            ]}
+        />
     );
+};
 
     return (
         <div className="fade-in">
@@ -194,9 +233,19 @@ const BOQGeneration: React.FC<BOQGenerationProps> = ({ project, onStatusChange }
                         </div>
                     </div>
 
-                    {renderGroup('PRODUCTS', boqSummary.PRODUCT || [])}
-                    {renderGroup('DRIVERS', boqSummary.DRIVER || [])}
-                    {renderGroup('ACCESSORIES', boqSummary.ACCESSORY || [])}
+<Collapse accordion defaultActiveKey={['PRODUCTS']} style={{ marginTop: 10 }}>
+    <Collapse.Panel header="PRODUCTS" key="PRODUCTS">
+        {renderGroup('PRODUCTS', boqSummary.PRODUCT || [])}
+    </Collapse.Panel>
+
+    <Collapse.Panel header="DRIVERS" key="DRIVERS">
+        {renderGroup('DRIVERS', boqSummary.DRIVER || [])}
+    </Collapse.Panel>
+
+    <Collapse.Panel header="ACCESSORIES" key="ACCESSORIES">
+        {renderGroup('ACCESSORIES', boqSummary.ACCESSORY || [])}
+    </Collapse.Panel>
+</Collapse>
 
                     <div style={{
                         marginTop: '24px',

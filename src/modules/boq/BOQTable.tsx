@@ -1,4 +1,3 @@
-
 import type { BOQItem } from './types';
 
 interface BOQTableProps {

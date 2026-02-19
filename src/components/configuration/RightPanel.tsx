@@ -69,6 +69,10 @@ const RightPanel: React.FC<RightPanelProps> = ({
         return item ? item.quantity : 0;
     };
 
+    // State for input fields for driver and accessory quantities
+    const [driverQtyInputs, setDriverQtyInputs] = useState<{ [id: number]: number }>({});
+    const [accessoryQtyInputs, setAccessoryQtyInputs] = useState<{ [id: number]: number }>({});
+
     return (
         <aside style={styles.panel}>
             {/* Drivers Section */}
@@ -87,21 +91,28 @@ const RightPanel: React.FC<RightPanelProps> = ({
                         drivers.map(d => {
                             const id = d.driver_id || (d as any).id;
                             const qty = getDriverQty(id);
+                            const inputQty = driverQtyInputs[id] !== undefined ? driverQtyInputs[id] : (qty || 2);
                             return (
                                 <div key={`d-${id}`} style={{ ...styles.row, backgroundColor: qty > 0 ? erpColors.activeRow : 'transparent' }}>
                                     <div style={styles.itemName} title={d.driver_code}>
                                         {(d as any).driver_make || d.make} {d.driver_code}
                                     </div>
                                     <div style={styles.controls}>
-                                        {qty === 0 ? (
-                                            <button style={styles.addBtn} onClick={() => onAddDriver(d, 1)}>Add</button>
-                                        ) : (
-                                            <div style={styles.qtyGroup}>
-                                                <button style={styles.qtyBtn} onClick={() => onUpdateQty('driver', id, -1)}>-</button>
-                                                <span style={styles.qtyVal}>{qty}</span>
-                                                <button style={styles.qtyBtn} onClick={() => onUpdateQty('driver', id, 1)}>+</button>
-                                            </div>
-                                        )}
+                                        <button style={styles.qtyBtn} onClick={() => setDriverQtyInputs(inputs => ({ ...inputs, [id]: Math.max(1, inputQty - 1) }))}>-</button>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            value={inputQty}
+                                            onChange={e => setDriverQtyInputs(inputs => ({ ...inputs, [id]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                                            style={{ width: 50, margin: '0 8px', padding: 2, borderRadius: 4, border: '1px solid #d1d5db', fontSize: 12 }}
+                                        />
+                                        <button style={styles.qtyBtn} onClick={() => setDriverQtyInputs(inputs => ({ ...inputs, [id]: inputQty + 1 }))}>+</button>
+                                        <button
+                                            style={styles.addBtn}
+                                            onClick={() => onAddDriver(d, inputQty)}
+                                        >
+                                            Add
+                                        </button>
                                     </div>
                                 </div>
                             );
@@ -126,21 +137,28 @@ const RightPanel: React.FC<RightPanelProps> = ({
                         accessories.map(a => {
                             const id = a.accessory_id || (a as any).id;
                             const qty = getAccessoryQty(id);
+                            const inputQty = accessoryQtyInputs[id] !== undefined ? accessoryQtyInputs[id] : (qty || 2);
                             return (
                                 <div key={`a-${id}`} style={{ ...styles.row, backgroundColor: qty > 0 ? erpColors.activeRow : 'transparent' }}>
                                     <div style={styles.itemName} title={a.order_code}>
                                         {a.make} {a.accessory_type}
                                     </div>
                                     <div style={styles.controls}>
-                                        {qty === 0 ? (
-                                            <button style={styles.addBtn} onClick={() => onAddAccessory(a, 1)}>Add</button>
-                                        ) : (
-                                            <div style={styles.qtyGroup}>
-                                                <button style={styles.qtyBtn} onClick={() => onUpdateQty('accessory', id, -1)}>-</button>
-                                                <span style={styles.qtyVal}>{qty}</span>
-                                                <button style={styles.qtyBtn} onClick={() => onUpdateQty('accessory', id, 1)}>+</button>
-                                            </div>
-                                        )}
+                                        <button style={styles.qtyBtn} onClick={() => setAccessoryQtyInputs(inputs => ({ ...inputs, [id]: Math.max(1, inputQty - 1) }))}>-</button>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            value={inputQty}
+                                            onChange={e => setAccessoryQtyInputs(inputs => ({ ...inputs, [id]: Math.max(1, parseInt(e.target.value) || 1) }))}
+                                            style={{ width: 50, margin: '0 8px', padding: 2, borderRadius: 4, border: '1px solid #d1d5db', fontSize: 12 }}
+                                        />
+                                        <button style={styles.qtyBtn} onClick={() => setAccessoryQtyInputs(inputs => ({ ...inputs, [id]: inputQty + 1 }))}>+</button>
+                                        <button
+                                            style={styles.addBtn}
+                                            onClick={() => onAddAccessory(a, inputQty)}
+                                        >
+                                            Add
+                                        </button>
                                     </div>
                                 </div>
                             );

@@ -4,6 +4,7 @@ import apiClient from '../../api/apiClient';
 import { boqService } from '../../services/boqService';
 import { mapBOQSummary } from '../../utils/boqSummaryMapper';
 import { projectService, type ProjectSearchResult } from '../../services/projectService';
+import { Collapse } from 'antd';
 
 interface BOQVersion {
     id: number;
@@ -71,25 +72,51 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
 
     // -- API Wrappers --
 
-    const loadBOQDetail = useCallback(async (boqId: number) => {
-        setLoading(true);
-        try {
-            const data = await boqService.getBOQSummaryDetail(boqId);
-            console.log(data)
-            if (data) {
-                setBoqItems(data.items || []);
-                const mapped = mapBOQSummary(data);
-                setSummary(mapped);
-                setMarginPercent(data.margin_percent || 0);
-            }
-        } catch (err) {
-            console.error("Failed to load BOQ detail", err);
-            setError("Failed to load BOQ items.");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+  const loadBOQDetail = useCallback(async (boqId: number) => {
+    setLoading(true);
+    try {
+        const data = await boqService.getBOQSummaryDetail(boqId);
+        console.log('Fetched BOQ Detail:', data);
+        if (data) {
+            // Group PRODUCT, DRIVER, ACCESSORY items into logical rows
+            const items = data.items || [];
+            const groupedItems = [];
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.item_type === "PRODUCT") {
+                    // Look ahead for driver and accessory
+                    const driver = items[i + 1]?.item_type === "DRIVER" ? items[i + 1] : null;
+                    const accessory = items[i + 2]?.item_type === "ACCESSORY" ? items[i + 2] : null;
 
+                    groupedItems.push({
+                        id: item.id,
+                        area_name: item.area_name || '',
+                        product_name: item.product_details?.name || '-',
+                        driver_name: driver?.driver_details?.driver_code || '-',
+                        accessories_names: accessory?.accessory_details?.name || '-',
+                        quantity: item.quantity,
+                        unit_price: item.unit_price,
+                        total_price: item.final_price,
+                    });
+
+                    // Skip the next items if they were used
+                    if (driver) i++;
+                    if (accessory) i++;
+                }
+            }
+            console.log('Grouped BOQ Items:', groupedItems);
+            setBoqItems(groupedItems);
+            const mapped = mapBOQSummary(data);
+            setSummary(mapped);
+            setMarginPercent(data.margin_percent || 0);
+        }
+    } catch (err) {
+        console.error("Failed to load BOQ detail", err);
+        setError("Failed to load BOQ items.");
+    } finally {
+        setLoading(false);
+    }
+}, []);
     const loadVersionsList = useCallback(async (projId: number) => {
         setLoading(true);
         try {
@@ -278,6 +305,87 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
         errorBanner: { padding: '8px 24px', backgroundColor: '#fee2e2', color: '#b91c1c', fontSize: '12px', borderBottom: '1px solid #fecaca' },
         lockBanner: { padding: '12px 24px', backgroundColor: '#fff7ed', color: '#9a3412', fontSize: '14px', fontWeight: 'bold', borderBottom: '1px solid #ffedd5', display: 'flex', gap: '10px', alignItems: 'center' }
     };
+    // ================= GROUP DATA =================
+
+const productRows: any[] = [];
+const driverRows: any[] = [];
+const accessoryRows: any[] = [];
+
+const productMap: Record<string, any> = {};
+const driverMap: Record<string, any> = {};
+const accessoryMap: Record<string, any> = {};
+console.log("Raw BOQ Items:", boqItems);
+boqItems.forEach(item => {
+
+    const price = Number(item.total_price) || 0;
+
+    // PRODUCT
+    if (!productMap[item.product_name]) {
+        productMap[item.product_name] = { name: item.product_name, qty: 0, amount: 0 };
+    }
+    productMap[item.product_name].qty += Number(item.quantity) || 0;
+    productMap[item.product_name].amount += price;
+
+    // DRIVER
+    if (item.driver_name && item.driver_name !== '-') {
+        if (!driverMap[item.driver_name]) {
+            driverMap[item.driver_name] = { name: item.driver_name, qty: 0, amount: 0 };
+        }
+        driverMap[item.driver_name].qty += Number(item.quantity) || 0;
+        driverMap[item.driver_name].amount += price;
+    }
+
+    // ACCESSORY
+    if (item.accessories_names && item.accessories_names !== '-') {
+        if (!accessoryMap[item.accessories_names]) {
+            accessoryMap[item.accessories_names] = { name: item.accessories_names, qty: 0, amount: 0 };
+        }
+        accessoryMap[item.accessories_names].qty += Number(item.quantity) || 0;
+        accessoryMap[item.accessories_names].amount += price;
+    }
+});
+
+console.log("Product Map:", productMap);
+const productsData = Object.values(productMap);
+const driversData = Object.values(driverMap);
+const accessoriesData = Object.values(accessoryMap);
+
+console.log("productsData:", productsData);
+const renderSection = (title: string, rows: any[]) => {
+
+    const total = rows.reduce((s, r) => s + r.amount, 0);
+
+    return {
+        key: title,
+        label: (
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontWeight: 600 }}>
+                <span>{title} ({rows.length})</span>
+                <span style={{ color: '#2563eb' }}>{formatCurrency(total)}</span>
+            </div>
+        ),
+        children: (
+            <table className="erp-table compact">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th className="text-right">Qty</th>
+                        <th className="text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((r, i) => (
+                        <tr key={i}>
+                            <td>{r.name}</td>
+                            <td className="text-right">{r.qty}</td>
+                            <td className="text-right">{formatCurrency(r.amount)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        )
+    };
+};
+
     return (
         <div style={styles.container}>
             {error && <div style={styles.errorBanner}><strong>Error:</strong> {error} <button onClick={() => setError(null)} style={{ float: 'right', border: 'none', background: 'none', cursor: 'pointer' }}>✕</button></div>}
@@ -402,32 +510,17 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
                         ) : boqItems.length === 0 ? (
                             <div className="table-empty">No BOQ items generated.</div>
                         ) : (
-                            <table className="erp-table compact">
-                                <thead>
-                                    <tr>
-                                        {projectMode === 'AREA_WISE' && <th>Area</th>}
-                                        <th>Product</th>
-                                        <th>Driver</th>
-                                        <th>Accessories</th>
-                                        <th className="text-right">Qty</th>
-                                        <th className="text-right">Unit Price</th>
-                                        <th className="text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {boqItems.map(item => (
-                                        <tr key={item.id}>
-                                            {projectMode === 'AREA_WISE' && <td>{item.area_name}</td>}
-                                            <td style={{ fontWeight: 600 }}>{item.product_name}</td>
-                                            <td style={{ fontSize: '12px' }}>{item.driver_name || '-'}</td>
-                                            <td style={{ fontSize: '12px' }}>{item.accessories_names || '-'}</td>
-                                            <td className="text-right">{item.quantity}</td>
-                                            <td className="text-right">{formatCurrency(item.unit_price)}</td>
-                                            <td className="text-right" style={{ fontWeight: 600 }}>{formatCurrency(item.total_price)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                           <Collapse
+    accordion
+    defaultActiveKey={['PRODUCTS']}
+    style={{ marginTop: 8 }}
+    items={[
+        renderSection("PRODUCTS", productsData),
+        renderSection("DRIVERS", driversData),
+        renderSection("ACCESSORIES", accessoriesData),
+    ]}
+/>
+
                         )}
                     </div>
                 </div>
