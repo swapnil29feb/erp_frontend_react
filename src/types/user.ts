@@ -5,7 +5,7 @@ export type User = {
     first_name?: string;
     last_name?: string;
     role?: string;
-    permissions?: string[];
+    permissions: string[];
 }
 
 export type AuthResponse = {

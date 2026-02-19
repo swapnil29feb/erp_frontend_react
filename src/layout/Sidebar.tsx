@@ -3,10 +3,53 @@ import type { FC } from 'react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { hasPermission } from '../auth/permissionUtils';
 
 const Sidebar: FC = () => {
+<<<<<<< HEAD
     const { logout } = useAuth();
     const [collapsed, setCollapsed] = useState(false);
+=======
+    const { logout, user, loading } = useAuth();
+    const permissions = [
+        "projects.view_project",
+        "masters.view_product",
+        "masters.view_driver",
+        "masters.view_accessory",
+        "boq.view_boq",
+        "settings.view_settings"
+    ];
+
+    // Debug logging to help identify why sidebar might be blank
+    if (!loading) {
+        console.log("[Sidebar RBAC Debug]:", {
+            userRole: user?.role,
+            permissionsCount: permissions?.length,
+            permissions: permissions
+        });
+    }
+
+    if (loading) {
+        return (
+            <div style={{ width: '240px', height: '100vh', backgroundColor: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ color: '#fff' }}>Loading...</div>
+            </div>
+        );
+    }
+
+    const isAdmin = user?.role === 'admin' || user?.role === 'superuser' || user?.role === 'Admin';
+
+    const checkPermission = (perm: string) => {
+        if (isAdmin) return true;
+
+        // Essential pages fallback: Always show Dashboard and Projects to any authenticated user
+        if (user && (perm === "projects.view_project" || perm === "dashboard")) {
+            return true;
+        }
+
+        return hasPermission(permissions, perm);
+    };
+>>>>>>> 228bb15 (My local changes before pulling)
 
     const styles = {
         sidebar: {
@@ -143,6 +186,7 @@ const Sidebar: FC = () => {
             </div>
 
             <nav style={styles.nav}>
+<<<<<<< HEAD
                 <NavLink to="/dashboard" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.dashboard} />
                     {!collapsed && 'Dashboard'}
@@ -165,9 +209,29 @@ const Sidebar: FC = () => {
                     <Icon path={icons.accessories} />
                     {!collapsed && 'Accessories'}
                 </NavLink>
+=======
+                {checkPermission("projects.view_project") && (
+                    <NavLink to="/dashboard" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.dashboard} />
+                        Dashboard
+                    </NavLink>
+                )}
 
-                <div style={{ height: '24px' }} />
+                {checkPermission("projects.view_project") && (
+                    <NavLink to="/projects" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.projects} />
+                        Projects
+                    </NavLink>
+                )}
+>>>>>>> 228bb15 (My local changes before pulling)
 
+                {(checkPermission("masters.view_product") ||
+                    checkPermission("masters.view_driver") ||
+                    checkPermission("masters.view_accessory")) && (
+                        <>
+                            <div style={styles.sectionHeader}>Masters</div>
+
+<<<<<<< HEAD
                 <NavLink to="/reports" style={getLinkStyle} className="sidebar-nav-item">
                     <Icon path={icons.reports} />
                     {!collapsed && 'Reports'}
@@ -176,6 +240,44 @@ const Sidebar: FC = () => {
                     <Icon path={icons.settings} />
                     {!collapsed && 'Settings'}
                 </NavLink>
+=======
+                            {checkPermission("masters.view_product") && (
+                                <NavLink to="/masters/products" style={getLinkStyle} className="sidebar-nav-item">
+                                    <Icon path={icons.products} />
+                                    Products
+                                </NavLink>
+                            )}
+
+                            {checkPermission("masters.view_driver") && (
+                                <NavLink to="/masters/drivers" style={getLinkStyle} className="sidebar-nav-item">
+                                    <Icon path={icons.drivers} />
+                                    Drivers
+                                </NavLink>
+                            )}
+
+                            {checkPermission("masters.view_accessory") && (
+                                <NavLink to="/masters/accessories" style={getLinkStyle} className="sidebar-nav-item">
+                                    <Icon path={icons.accessories} />
+                                    Accessories
+                                </NavLink>
+                            )}
+                        </>
+                    )}
+
+                {checkPermission("boq.view_boq") && (
+                    <NavLink to="/reports" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.reports} />
+                        Reports
+                    </NavLink>
+                )}
+
+                {checkPermission("settings.view_settings") && (
+                    <NavLink to="/settings" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.settings} />
+                        Settings
+                    </NavLink>
+                )}
+>>>>>>> 228bb15 (My local changes before pulling)
             </nav>
 
             <div style={styles.logoutArea}>

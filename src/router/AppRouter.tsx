@@ -12,6 +12,7 @@ import DriversPage from '../pages/masters/DriversPage';
 import AccessoriesPage from '../pages/masters/AccessoriesPage';
 import Settings from '../pages/Settings';
 import RBACPage from '../pages/settings/RBACPage';
+import PermissionRoute from '../auth/PermissionRoute';
 
 // BOQ Module
 // BOQ Module
@@ -66,7 +67,14 @@ const AppRouter: FC = () => {
 
                 {/* Settings */}
                 <Route path="settings" element={<Settings />} />
-                <Route path="settings/users" element={<RBACPage />} />
+                <Route
+                    path="settings/users"
+                    element={
+                        <PermissionRoute permission="settings.manage_users">
+                            <RBACPage />
+                        </PermissionRoute>
+                    }
+                />
 
                 {/* Optional: index redirect to dashboard */}
                 <Route index element={<Dashboard />} />
