@@ -91,7 +91,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
                         drivers.map(d => {
                             const id = d.driver_id || (d as any).id;
                             const qty = getDriverQty(id);
-                            const inputQty = driverQtyInputs[id] !== undefined ? driverQtyInputs[id] : (qty || 2);
+                            const inputQty = driverQtyInputs[id] !== undefined ? driverQtyInputs[id] : (qty || 1);
                             return (
                                 <div key={`d-${id}`} style={{ ...styles.row, backgroundColor: qty > 0 ? erpColors.activeRow : 'transparent' }}>
                                     <div style={styles.itemName} title={d.driver_code}>
@@ -137,7 +137,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
                         accessories.map(a => {
                             const id = a.accessory_id || (a as any).id;
                             const qty = getAccessoryQty(id);
-                            const inputQty = accessoryQtyInputs[id] !== undefined ? accessoryQtyInputs[id] : (qty || 2);
+                            const inputQty = accessoryQtyInputs[id] !== undefined ? accessoryQtyInputs[id] : (qty || 1);
                             return (
                                 <div key={`a-${id}`} style={{ ...styles.row, backgroundColor: qty > 0 ? erpColors.activeRow : 'transparent' }}>
                                     <div style={styles.itemName} title={a.order_code}>

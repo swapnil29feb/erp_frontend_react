@@ -276,11 +276,6 @@ console.log("Grouped Data for Rendering:", groupedData);
                         {area.products.length > 0 && (
                             <ConfigurationTable
                                 products={area.products}
-                                drivers={[]}
-                                accessories={[]}
-                                onDelete={onDelete}
-                                // onUpdateQty={onUpdateQty}
-                                isLocked={isLocked}
                             />
                         )}
 
