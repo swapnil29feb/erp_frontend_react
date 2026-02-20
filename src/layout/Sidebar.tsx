@@ -3,10 +3,42 @@ import type { FC } from 'react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { hasPermission } from '../auth/permissionUtils';
 
 const Sidebar: FC = () => {
-    const { logout } = useAuth();
+    const { logout, user, loading, permissions } = useAuth();
     const [collapsed, setCollapsed] = useState(false);
+
+    // Debug logging to help identify why sidebar might be blank
+    if (!loading) {
+        console.log("[Sidebar RBAC Debug]:", {
+            userRole: user?.role,
+            username: user?.username,
+            permissionsCount: permissions?.length,
+            permissions: permissions
+        });
+    }
+
+    if (loading) {
+        return (
+            <div style={{ width: '240px', height: '100vh', backgroundColor: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ color: '#fff' }}>Loading...</div>
+            </div>
+        );
+    }
+
+    const isAdmin = user?.role === 'admin' || user?.role === 'superuser' || user?.role === 'Admin';
+
+    const checkPermission = (perm: string) => {
+        if (isAdmin) return true;
+
+        // Essential pages fallback: Always show Dashboard and Projects to any authenticated user
+        if (user && (perm === "projects.view_project" || perm === "dashboard")) {
+            return true;
+        }
+
+        return hasPermission(permissions || [], perm);
+    };
 
     const styles = {
         sidebar: {
@@ -143,39 +175,63 @@ const Sidebar: FC = () => {
             </div>
 
             <nav style={styles.nav}>
-                <NavLink to="/dashboard" style={getLinkStyle} className="sidebar-nav-item">
-                    <Icon path={icons.dashboard} />
-                    {!collapsed && 'Dashboard'}
-                </NavLink>
-                <NavLink to="/projects" style={getLinkStyle} className="sidebar-nav-item">
-                    <Icon path={icons.projects} />
-                    {!collapsed && 'Projects'}
-                </NavLink>
+                {checkPermission("projects.view_project") && (
+                    <NavLink to="/dashboard" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.dashboard} />
+                        {!collapsed && 'Dashboard'}
+                    </NavLink>
+                )}
 
-                <div style={styles.sectionHeader}>{!collapsed && 'Masters'}</div>
-                <NavLink to="/masters/products" style={getLinkStyle} className="sidebar-nav-item">
-                    <Icon path={icons.products} />
-                    {!collapsed && 'Products'}
-                </NavLink>
-                <NavLink to="/masters/drivers" style={getLinkStyle} className="sidebar-nav-item">
-                    <Icon path={icons.drivers} />
-                    {!collapsed && 'Drivers'}
-                </NavLink>
-                <NavLink to="/masters/accessories" style={getLinkStyle} className="sidebar-nav-item">
-                    <Icon path={icons.accessories} />
-                    {!collapsed && 'Accessories'}
-                </NavLink>
+                {checkPermission("projects.view_project") && (
+                    <NavLink to="/projects" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.projects} />
+                        {!collapsed && 'Projects'}
+                    </NavLink>
+                )}
 
-                <div style={{ height: '24px' }} />
+                {
+                    (checkPermission("masters.view_product") ||
+                        checkPermission("masters.view_driver") ||
+                        checkPermission("masters.view_accessory")) && (
+                        <>
+                            <div style={styles.sectionHeader}>{!collapsed && 'Masters'}</div>
 
-                <NavLink to="/reports" style={getLinkStyle} className="sidebar-nav-item">
-                    <Icon path={icons.reports} />
-                    {!collapsed && 'Reports'}
-                </NavLink>
-                <NavLink to="/settings" style={getLinkStyle} className="sidebar-nav-item">
-                    <Icon path={icons.settings} />
-                    {!collapsed && 'Settings'}
-                </NavLink>
+                            {checkPermission("masters.view_product") && (
+                                <NavLink to="/masters/products" style={getLinkStyle} className="sidebar-nav-item">
+                                    <Icon path={icons.products} />
+                                    {!collapsed && 'Products'}
+                                </NavLink>
+                            )}
+
+                            {checkPermission("masters.view_driver") && (
+                                <NavLink to="/masters/drivers" style={getLinkStyle} className="sidebar-nav-item">
+                                    <Icon path={icons.drivers} />
+                                    {!collapsed && 'Drivers'}
+                                </NavLink>
+                            )}
+
+                            {checkPermission("masters.view_accessory") && (
+                                <NavLink to="/masters/accessories" style={getLinkStyle} className="sidebar-nav-item">
+                                    <Icon path={icons.accessories} />
+                                    {!collapsed && 'Accessories'}
+                                </NavLink>
+                            )}
+                        </>
+                    )}
+
+                {checkPermission("boq.view_boq") && (
+                    <NavLink to="/reports" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.reports} />
+                        {!collapsed && 'Reports'}
+                    </NavLink>
+                )}
+
+                {checkPermission("settings.view_settings") && (
+                    <NavLink to="/settings" style={getLinkStyle} className="sidebar-nav-item">
+                        <Icon path={icons.settings} />
+                        {!collapsed && 'Settings'}
+                    </NavLink>
+                )}
             </nav>
 
             <div style={styles.logoutArea}>

@@ -41,7 +41,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
     const [productConfigs, setProductConfigs] = useState<any[]>([]);
     const [driverConfigs, setDriverConfigs] = useState<any[]>([]);
     const [accessoryConfigs, setAccessoryConfigs] = useState<any[]>([]);
-const lastHasDataRef = React.useRef<boolean | null>(null);
+    const lastHasDataRef = React.useRef<boolean | null>(null);
 
     const loadData = useCallback(async () => {
         if (!projectId) return;
@@ -171,66 +171,66 @@ const lastHasDataRef = React.useRef<boolean | null>(null);
         loadData();
     }, [projectId]);
 
-useEffect(() => {
-    if (!loading && onDataLoaded) {
-        const hasData = productConfigs.length > 0;
+    useEffect(() => {
+        if (!loading && onDataLoaded) {
+            const hasData = productConfigs.length > 0;
 
-        // prevent infinite parent update loop
-        if (lastHasDataRef.current !== hasData) {
-            lastHasDataRef.current = hasData;
-            onDataLoaded(hasData);
+            // prevent infinite parent update loop
+            if (lastHasDataRef.current !== hasData) {
+                lastHasDataRef.current = hasData;
+                onDataLoaded(hasData);
+            }
         }
-    }
-}, [loading, productConfigs.length, onDataLoaded]);
+    }, [loading, productConfigs.length, onDataLoaded]);
 
- const groupedData = useMemo(() => {
+    const groupedData = useMemo(() => {
 
-    // If no areas OR project level → make virtual area
-    const useProjectWide = isProjectLevel || areas.length === 0;
+        // If no areas OR project level → make virtual area
+        const useProjectWide = isProjectLevel || !areas || areas.length === 0;
 
-    const map = new Map();
+        const map = new Map();
 
-    // Create area buckets
-    if (useProjectWide) {
-        map.set('project-wide', {
-            id: null,
-            name: 'Project Wide Configuration',
-            products: [],
-            drivers: [],
-            accessories: [],
+        // Create area buckets
+        if (useProjectWide) {
+            map.set('project-wide', {
+                id: null,
+                name: 'Project Wide Configuration',
+                products: [],
+                drivers: [],
+                accessories: [],
+            });
+        } else {
+            areas.forEach(area =>
+                map.set(area.id, { ...area, products: [], drivers: [], accessories: [] })
+            );
+        }
+
+        // Assign products
+        productConfigs.forEach(p => {
+            const key = useProjectWide ? 'project-wide' : p.area;
+            const area = map.get(key);
+            if (area) area.products.push(p);
         });
-    } else {
-        areas.forEach(area =>
-            map.set(area.id, { ...area, products: [], drivers: [], accessories: [] })
-        );
-    }
 
-    // Assign products
-    productConfigs.forEach(p => {
-        const key = useProjectWide ? 'project-wide' : p.area;
-        const area = map.get(key);
-         area.products.push(p);
-    });
+        // Assign drivers
+        driverConfigs.forEach(d => {
+            const key = useProjectWide ? 'project-wide' : d.area;
+            const area = map.get(key);
 
-    // Assign drivers
-    driverConfigs.forEach(d => {
-        const key = useProjectWide ? 'project-wide' : d.area;
-        const area = map.get(key);
+            if (area) area.drivers.push(d);
+        });
 
-        if (area) area.drivers.push(d);
-    });
+        // Assign accessories
+        accessoryConfigs.forEach(a => {
+            const key = useProjectWide ? 'project-wide' : a.area;
+            const area = map.get(key);
 
-    // Assign accessories
-    accessoryConfigs.forEach(a => {
-        const key = useProjectWide ? 'project-wide' : a.area;
-        const area = map.get(key);
+            if (area) area.accessories.push(a);
+        });
 
-        if (area) area.accessories.push(a);
-    });
+        return Array.from(map.values());
 
-    return Array.from(map.values());
-
-}, [productConfigs, driverConfigs, accessoryConfigs, areas, isProjectLevel]);
+    }, [productConfigs, driverConfigs, accessoryConfigs, areas, isProjectLevel]);
 
     const hasAnyConfig =
         productConfigs.length > 0 ||
@@ -244,7 +244,7 @@ useEffect(() => {
             </div>
         );
     }
-console.log("Grouped Data for Rendering:", groupedData);
+    console.log("Grouped Data for Rendering:", groupedData);
     return (
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {groupedData.map((area) => (

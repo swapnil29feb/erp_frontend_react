@@ -7,6 +7,7 @@ interface AuthContextType {
     accessToken: string | null;
     isAuthenticated: boolean;
     loading: boolean;
+    permissions: string[];
     login: (username: string, password: string) => Promise<void>;
     logout: () => void;
 }
@@ -21,11 +22,21 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
     useEffect(() => {
         const token = localStorage.getItem('access_token');
+        const storedUser = localStorage.getItem('user_details');
+
         if (token) {
             setAccessToken(token);
             setIsAuthenticated(true);
+            if (storedUser) {
+                try {
+                    setUser(JSON.parse(storedUser));
+                } catch (e) {
+                    console.error("Failed to parse stored user", e);
+                }
+            }
         } else {
             setIsAuthenticated(false);
+            setUser(null);
         }
         setLoading(false);
     }, []);
@@ -37,13 +48,27 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
                 password,
             });
 
-            const { access, refresh } = response.data;
+            // Expected response: { access, refresh, user }
+            const { access, refresh, user } = response.data;
 
-            localStorage.setItem('access_token', access);
-            localStorage.setItem('refresh_token', refresh);
-            setAccessToken(access);
-            setIsAuthenticated(true);
+            if (access) {
+                localStorage.setItem('access_token', access);
+                setAccessToken(access);
+                setIsAuthenticated(true);
+            }
+
+            if (refresh) {
+                localStorage.setItem('refresh_token', refresh);
+            }
+
+            if (user) {
+                setUser(user);
+                // Optionally store user details in local storage if needed for persistence
+                localStorage.setItem('user_details', JSON.stringify(user));
+            }
+
         } catch (error) {
+            console.error("Login failed", error);
             throw error;
         }
     };
@@ -58,7 +83,15 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, accessToken, isAuthenticated, loading, login, logout }}>
+        <AuthContext.Provider value={{
+            user,
+            accessToken,
+            isAuthenticated,
+            loading,
+            permissions: user?.permissions || [],
+            login,
+            logout
+        }}>
             {children}
         </AuthContext.Provider>
     );

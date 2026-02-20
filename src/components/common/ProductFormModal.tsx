@@ -25,57 +25,79 @@ const FileInput = ({ value, onChange, placeholder }: { value: any, onChange: (fi
     };
 
     return (
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div
-                style={{
-                    flex: 1,
-                    padding: '8px 12px',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    backgroundColor: '#f8fafc',
-                    color: displayValue ? '#334155' : '#94a3b8',
-                    fontSize: '14px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                }}
-            >
-                {displayValue || placeholder}
-            </div>
-            <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-                accept="image/*,.pdf"
-            />
-            <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => fileInputRef.current?.click()}
-            >
-                Start Upload
-            </button>
-            {value && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div
+                    style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        backgroundColor: '#f8fafc',
+                        color: displayValue ? '#334155' : '#94a3b8',
+                        fontSize: '14px',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                    }}
+                >
+                    {displayValue || placeholder}
+                </div>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                    accept="image/*,.pdf"
+                />
                 <button
                     type="button"
                     className="btn-secondary"
-                    style={{ color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
-                    onClick={() => onChange(null)}
+                    onClick={() => fileInputRef.current?.click()}
                 >
-                    Clear
+                    Start Upload
                 </button>
+                {value && (
+                    <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
+                        onClick={() => onChange(null)}
+                    >
+                        Clear
+                    </button>
+                )}
+                {isUrl && (
+                    <a
+                        href={value}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn-secondary"
+                        style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+                    >
+                        View
+                    </a>
+                )}
+            </div>
+            {/* Image Preview */}
+            {value instanceof File && value.type.startsWith('image/') && (
+                <div style={{ marginTop: '4px' }}>
+                    <img
+                        src={URL.createObjectURL(value)}
+                        alt="Preview"
+                        style={{ maxHeight: '100px', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                    />
+                </div>
             )}
-            {isUrl && (
-                <a
-                    href={value}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-secondary"
-                    style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
-                >
-                    View
-                </a>
+            {/* Existing URL Image Preview (if wanted, but user specifically asked for formData.visual_image preview which is the File) */}
+            {isUrl && (value.match(/\.(jpeg|jpg|gif|png)$/) != null || value.startsWith('data:image')) && (
+                <div style={{ marginTop: '4px' }}>
+                    <img
+                        src={value}
+                        alt="Existing"
+                        style={{ maxHeight: '100px', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                    />
+                </div>
             )}
         </div>
     );

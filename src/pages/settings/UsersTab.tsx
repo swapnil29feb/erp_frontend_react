@@ -1,18 +1,34 @@
 import { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Input, Select } from "antd";
-import { getUsers, createUser, getRoles } from "../../services/rbacService";
+import { Table, Button, Modal, Form, Input, Select, Tag, Space, Typography, Spin, Empty, message, Divider, Card } from "antd";
+import { getUsers, createUser, getRoles, getRolePermissions, getPermissions } from "../../services/rbacService";
+import { EyeOutlined } from "@ant-design/icons";
+
+const { Text, Title } = Typography;
 
 const UsersTab = () => {
     const [users, setUsers] = useState<any[]>([]);
     const [roles, setRoles] = useState<any[]>([]);
+    const [allPermissions, setAllPermissions] = useState<any[]>([]);
     const [open, setOpen] = useState(false);
+    const [viewAccessOpen, setViewAccessOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [rolePermissions, setRolePermissions] = useState<string[]>([]);
+    const [loadingPermissions, setLoadingPermissions] = useState(false);
     const [form] = Form.useForm();
 
     const loadData = async () => {
-        const u = await getUsers();
-        const r = await getRoles();
-        setUsers(u);
-        setRoles(r);
+        try {
+            const [u, r, p] = await Promise.all([
+                getUsers(),
+                getRoles(),
+                getPermissions()
+            ]);
+            setUsers(u || []);
+            setRoles(r || []);
+            setAllPermissions(p || []);
+        } catch (error) {
+            message.error("Failed to load user and role data");
+        }
     };
 
     useEffect(() => {
@@ -20,21 +36,78 @@ const UsersTab = () => {
     }, []);
 
     const handleCreate = async () => {
-        const values = await form.validateFields();
-        await createUser(values);
-        setOpen(false);
-        form.resetFields();
-        loadData();
+        try {
+            const values = await form.validateFields();
+            await createUser(values);
+            message.success("User created successfully");
+            setOpen(false);
+            form.resetFields();
+            loadData();
+        } catch {
+            message.error("Failed to create user");
+        }
     };
+
+    const handleViewAccess = async (user: any) => {
+        const roleId = user.role?.id || user.role_id;
+        if (!roleId) {
+            message.warning("This user has no assigned role");
+            return;
+        }
+
+        setSelectedUser(user);
+        setViewAccessOpen(true);
+        setLoadingPermissions(true);
+        try {
+            const perms = await getRolePermissions(roleId);
+            const permStrings = perms.map((p: any) => typeof p === 'string' ? p : p.codename);
+            setRolePermissions(permStrings);
+        } catch {
+            message.error("Failed to load permissions for this role");
+        } finally {
+            setLoadingPermissions(false);
+        }
+    };
+
+    const getAccessSummary = () => {
+        const summary: Record<string, string> = {};
+        const modules: Record<string, string[]> = {};
+
+        allPermissions.forEach((perm: any) => {
+            const moduleName = perm.codename.includes(':') ? perm.codename.split(':')[0] : perm.codename.split('.')[0];
+            if (!modules[moduleName]) modules[moduleName] = [];
+            modules[moduleName].push(perm.codename);
+        });
+
+        Object.keys(modules).forEach(moduleName => {
+            const modulePerms = modules[moduleName];
+            const selectedModulePerms = modulePerms.filter(cp => rolePermissions.includes(cp));
+
+            if (selectedModulePerms.length === 0) return;
+
+            if (selectedModulePerms.length === modulePerms.length) {
+                summary[moduleName] = "Full Access";
+            } else if (selectedModulePerms.length === 1 && (selectedModulePerms[0].includes('view') || selectedModulePerms[0].includes('read'))) {
+                summary[moduleName] = "View Only";
+            } else {
+                summary[moduleName] = "Custom";
+            }
+        });
+
+        return summary;
+    };
+
+    const accessSummary = getAccessSummary();
 
     return (
         <>
-            <Button type="primary" onClick={() => setOpen(true)}>
-                Create User
-            </Button>
+            <div style={{ marginBottom: 16 }}>
+                <Button type="primary" onClick={() => setOpen(true)}>
+                    Create User
+                </Button>
+            </div>
 
             <Table
-                style={{ marginTop: 16 }}
                 dataSource={users}
                 rowKey="id"
                 columns={[
@@ -43,7 +116,21 @@ const UsersTab = () => {
                     {
                         title: "Role",
                         dataIndex: ["role", "name"],
+                        render: (name) => <Tag color="blue">{name || "N/A"}</Tag>
                     },
+                    {
+                        title: "Actions",
+                        key: "actions",
+                        render: (_, record) => (
+                            <Button
+                                icon={<EyeOutlined />}
+                                size="small"
+                                onClick={() => handleViewAccess(record)}
+                            >
+                                View Access
+                            </Button>
+                        )
+                    }
                 ]}
             />
 
@@ -55,11 +142,11 @@ const UsersTab = () => {
             >
                 <Form form={form} layout="vertical">
                     <Form.Item name="name" label="Full Name" rules={[{ required: true }]}>
-                        <Input />
+                        <Input placeholder="John Doe" />
                     </Form.Item>
 
-                    <Form.Item name="email" label="Email" rules={[{ required: true }]}>
-                        <Input />
+                    <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+                        <Input placeholder="john@example.com" />
                     </Form.Item>
 
                     <Form.Item
@@ -72,6 +159,7 @@ const UsersTab = () => {
 
                     <Form.Item name="role_id" label="Role" rules={[{ required: true }]}>
                         <Select
+                            placeholder="Select a role"
                             options={roles.map((r) => ({
                                 label: r.name,
                                 value: r.id,
@@ -79,6 +167,60 @@ const UsersTab = () => {
                         />
                     </Form.Item>
                 </Form>
+            </Modal>
+
+            <Modal
+                title={`Access Review: ${selectedUser?.name}`}
+                open={viewAccessOpen}
+                onCancel={() => setViewAccessOpen(false)}
+                footer={[
+                    <Button key="close" onClick={() => setViewAccessOpen(false)}>Close</Button>
+                ]}
+                width={600}
+            >
+                {loadingPermissions ? (
+                    <div style={{ textAlign: 'center', padding: '40px' }}>
+                        <Spin tip="Fetching access rights..." />
+                    </div>
+                ) : (
+                    <div>
+                        <div style={{ marginBottom: 20 }}>
+                            <Text type="secondary">Primary Role: </Text>
+                            <Tag color="gold" style={{ fontSize: '14px', padding: '4px 8px' }}>
+                                {selectedUser?.role?.name || "N/A"}
+                            </Tag>
+                        </div>
+
+                        <Divider style={{ margin: '16px 0' }} />
+
+                        <Title level={5} style={{ marginBottom: 16 }}>Permission Summary</Title>
+
+                        <Space wrap size={[8, 12]}>
+                            {Object.entries(accessSummary).length > 0 ? (
+                                Object.entries(accessSummary).map(([module, status]) => (
+                                    <Card
+                                        size="small"
+                                        key={module}
+                                        style={{ width: 170, backgroundColor: '#fcfcfc' }}
+                                        styles={{ body: { padding: '8px 12px' } }}
+                                    >
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            <Text strong style={{ textTransform: 'capitalize', fontSize: '13px' }}>{module}</Text>
+                                            <Tag
+                                                color={status === "Full Access" ? "green" : status === "View Only" ? "blue" : "orange"}
+                                                style={{ margin: 0, width: 'fit-content', border: 'none' }}
+                                            >
+                                                {status}
+                                            </Tag>
+                                        </div>
+                                    </Card>
+                                ))
+                            ) : (
+                                <Empty description="No access rights found for this role" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                            )}
+                        </Space>
+                    </div>
+                )}
             </Modal>
         </>
     );

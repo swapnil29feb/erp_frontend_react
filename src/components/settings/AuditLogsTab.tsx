@@ -1,11 +1,12 @@
 import { useEffect, useState, type FC } from 'react';
-import { Table, Select, DatePicker, Card, Space } from 'antd';
+import { Table, Select, DatePicker, Card, Space, Tag, Typography } from 'antd';
 import { ClockCircleOutlined } from '@ant-design/icons';
 import apiClient from '../../api/apiClient';
 import { userService, type User } from '../../services/userService';
 import type { Dayjs } from 'dayjs';
 
 const { RangePicker } = DatePicker;
+const { Text } = Typography;
 
 interface AuditLog {
     id: number;
@@ -116,18 +117,20 @@ const AuditLogsTab: FC = () => {
             dataIndex: 'action_type',
             key: 'action_type',
             width: 150,
-            render: (action: string) => (
-                <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    backgroundColor: '#eff6ff',
-                    color: '#2563eb'
-                }}>
-                    {action?.replace(/_/g, ' ').toUpperCase()}
-                </span>
-            )
+            render: (action: string) => {
+                const act = action?.toUpperCase();
+                let color = 'default';
+                if (act?.includes('CREATE')) color = 'green';
+                else if (act?.includes('UPDATE') || act?.includes('EDIT') || act?.includes('PATCH')) color = 'blue';
+                else if (act?.includes('DELETE')) color = 'red';
+                else if (act?.includes('APPROVE')) color = 'purple';
+
+                return (
+                    <Tag color={color} style={{ fontWeight: 600, fontSize: '11px' }}>
+                        {action?.replace(/_/g, ' ').toUpperCase()}
+                    </Tag>
+                );
+            }
         },
         {
             title: 'Entity',
@@ -208,6 +211,40 @@ const AuditLogsTab: FC = () => {
                 dataSource={logs}
                 rowKey="id"
                 loading={loading}
+                expandable={{
+                    expandedRowRender: (record) => {
+                        let detailsContent = record.details;
+                        try {
+                            // Try to format if it's JSON
+                            if (typeof record.details === 'string' && (record.details.startsWith('{') || record.details.startsWith('['))) {
+                                detailsContent = JSON.stringify(JSON.parse(record.details), null, 2);
+                            } else if (typeof record.details === 'object') {
+                                detailsContent = JSON.stringify(record.details, null, 2);
+                            }
+                        } catch (e) {
+                            detailsContent = record.details;
+                        }
+
+                        return (
+                            <div style={{ margin: 0, padding: '16px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                <Text strong style={{ display: 'block', marginBottom: '8px', fontSize: '12px' }}>Change Details</Text>
+                                <pre style={{
+                                    margin: 0,
+                                    padding: '12px',
+                                    backgroundColor: '#fff',
+                                    borderRadius: '4px',
+                                    border: '1px solid #f1f5f9',
+                                    fontSize: '12px',
+                                    whiteSpace: 'pre-wrap',
+                                    color: '#334155'
+                                }}>
+                                    {detailsContent || 'No additional details available.'}
+                                </pre>
+                            </div>
+                        );
+                    },
+                    rowExpandable: (record) => !!record.details,
+                }}
                 pagination={{
                     current: page,
                     pageSize: pageSize,
