@@ -73,28 +73,22 @@ const ProjectForm: React.FC<ProjectFormProps> = ({
     };
 
     const handleProjectClick = async (project: Project) => {
-        console.log('🔍 Project clicked:', project.name, project.id);
         try {
             // Fetch the full project details including nested areas
             const response = await projectApi.get(project.id);
-            console.log('📦 Project  details response:', response);
 
             if (response.success && response.data) {
                 const projectData = response.data;
-                console.log('✅ Project data received:', projectData);
 
                 // Fetch areas separately if not included in project response
                 try {
-                    console.log('🔍 Fetching areas for project:', project.id);
                     const areasResponse = await areaApi.getAll(project.id);
-                    console.log('📦 Areas response:', areasResponse);
 
                     if (areasResponse.success && areasResponse.data) {
                         // Merge areas into project data
                         projectData.areas = Array.isArray(areasResponse.data)
                             ? areasResponse.data
                             : [];
-                        console.log('✅ Areas merged:', projectData.areas.length, 'areas');
                     } else {
                         projectData.areas = projectData.areas || [];
                         console.warn('⚠️ No areas in response, using empty array');

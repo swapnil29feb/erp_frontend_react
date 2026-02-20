@@ -17,7 +17,7 @@ interface UnifiedConfigurationTabProps {
     areas: any[];
     onAddProduct: (areaId: number) => void;
     onDelete: (id: number) => void;
-    // onUpdateQty: (id: number, qty: number) => void;
+    onUpdateQty: (id: number, qty: number) => void;
     onDataLoaded?: (hasData: boolean) => void;
 }
 
@@ -34,7 +34,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
     areas,
     onAddProduct,
     onDelete,
-    // onUpdateQty,
+    onUpdateQty,
     onDataLoaded
 }) => {
     const [loading, setLoading] = useState(false);

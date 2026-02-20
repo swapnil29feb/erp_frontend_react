@@ -130,7 +130,6 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         }
 
         setIsAdding(true);
-        console.log('💡 Submitting Product Form:', productForm);
         try {
             await onAddProduct({
                 ...productForm,
@@ -212,7 +211,6 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         }
 
         setIsAdding(true);
-        console.log('⚡ Submitting Driver Form:', driverForm);
         try {
             await onAddDriver({
                 ...driverForm,
@@ -235,7 +233,6 @@ const ProductManagement: React.FC<ProductManagementProps> = ({
         }
 
         setIsAdding(true);
-        console.log('🔧 Submitting Accessory Form:', accessoryForm);
         try {
             await onAddAccessory({
                 ...accessoryForm,

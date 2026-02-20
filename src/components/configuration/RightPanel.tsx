@@ -19,7 +19,6 @@ interface RightPanelProps {
     selectedAccessories: any[];
     onAddDriver: (driver: Driver, qty: number) => void;
     onAddAccessory: (accessory: Accessory, qty: number) => void;
-    onUpdateQty: (type: 'driver' | 'accessory', id: number, delta: number) => void;
 }
 
 const RightPanel: React.FC<RightPanelProps> = ({
@@ -27,8 +26,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
     selectedDrivers,
     selectedAccessories,
     onAddDriver,
-    onAddAccessory,
-    onUpdateQty
+    onAddAccessory
 }) => {
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [accessories, setAccessories] = useState<Accessory[]>([]);

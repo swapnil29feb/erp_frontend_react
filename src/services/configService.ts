@@ -46,8 +46,10 @@ export const configService = {
         return Array.isArray(res.data) ? res.data : (res.data as any).results || [];
     },
 
-    createConfiguration: (data: any) =>
-        apiClient.post<Configuration>('/configurations/save_batch/', data),
+    createConfiguration: (data: any) => {
+        console.log("Creating configuration with data:", data);
+        return apiClient.post<Configuration>('/configurations/save_batch/', data);
+    },
 
     attachDriver: (data: { configuration: number; driver: number; quantity: number }) =>
         apiClient.post('/configurations/configuration-drivers/', data),

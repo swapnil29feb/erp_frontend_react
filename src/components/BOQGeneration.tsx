@@ -22,7 +22,6 @@ const BOQGeneration: React.FC<BOQGenerationProps> = ({ project, onStatusChange }
         try {
             const response = await boqApi.getSummary(project.id);
             if (response.success && response.data) {
-                console.log('Fetched BOQ Summary:', response.data);
                 setBoqSummary(response.data);
                 // Assume the response contains boq_id and status
                 if (response.data.boq_id) setBoqId(response.data.boq_id);
@@ -44,14 +43,12 @@ const BOQGeneration: React.FC<BOQGenerationProps> = ({ project, onStatusChange }
     }, [project.id]);
 
 useEffect(()=>{
-    console.log('BOQ Summary Updated:', boqSummary);
 },[boqSummary])
 
     const handleGenerateBOQ = async () => {
         setLoading(true);
         try {
             const response = await boqApi.generate(project.id);
-            console.log('BOQ Generation Response:', response);
             if (response.success) {
                 await fetchBOQSummary();
             } else {

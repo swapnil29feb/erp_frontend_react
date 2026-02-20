@@ -143,15 +143,19 @@ const ConfigurationWorkspace: React.FC = () => {
             const payload = {
                 project_id: selectedProject?.id,
                 area_id: isProjectOnly ? null : Number(selectedAreaId),
-                products: selectedProducts.map((product) => ({
-                    product_id: product.product_id,
-                    quantity: product.quantity,
-                    // If UI uses shared drivers/accessories, we map from the arrays
-                    driver_id: selectedDrivers.length > 0 ? selectedDrivers[0].driver_id : null,
-                    accessories: selectedAccessories.map((acc: any) => ({
-                        accessory_id: acc.accessory_id,
-                        quantity: acc.quantity,
-                    })),
+               products: selectedProducts.map((product) => ({
+    product_id: product.product_id,
+    quantity: product.quantity,
+
+    drivers: selectedDrivers.map((drv: any) => ({
+        driver_id: drv.driver_id,
+        quantity: drv.quantity,
+    })),
+
+    accessories: selectedAccessories.map((acc: any) => ({
+        accessory_id: acc.accessory_id,
+        quantity: acc.quantity,
+    })),
                 })),
             };
 
@@ -195,7 +199,7 @@ const ConfigurationWorkspace: React.FC = () => {
                     selectedAccessories={selectedAccessories}
                     onAddDriver={handleAddDriver}
                     onAddAccessory={handleAddAccessory}
-                    onUpdateQty={handleUpdateRightPanelQty}
+                    // onUpdateQty={handleUpdateRightPanelQty}
                 />
             </main>
 
