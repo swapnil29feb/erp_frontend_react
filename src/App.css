@@ -471,3 +471,29 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* BOQ Comparison Table Row Status Highlighting */
+.row-added {
+  background-color: #e6fffb !important;
+}
+
+.row-removed {
+  background-color: #fff1f0 !important;
+}
+
+.row-modified {
+  background-color: #fffbe6 !important;
+}
+
+.totals-section {
+  display: flex;
+  gap: 32px;
+  justify-content: flex-end;
+}
+
+.totals-section div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}

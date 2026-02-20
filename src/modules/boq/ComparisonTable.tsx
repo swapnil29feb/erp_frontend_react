@@ -1,4 +1,4 @@
-import type { BOQCompareItem } from './compareTypes';
+import type { BOQCompareItem, BOQCompareResponse } from './compareTypes';
 
 interface ComparisonTableProps {
     items: BOQCompareItem[];
@@ -7,11 +7,11 @@ interface ComparisonTableProps {
         total_v2: number;
         difference: number;
     };
+    headerDiff?: BOQCompareResponse['header_diff'];
 }
 
-export default function ComparisonTable({ items, summary }: ComparisonTableProps) {
+export default function ComparisonTable({ items, summary: _summary, headerDiff }: ComparisonTableProps) {
     const safeItems = items || [];
-    const safeSummary = summary || { total_v1: 0, total_v2: 0, difference: 0 };
 
     if (safeItems.length === 0) {
         return (
@@ -42,7 +42,15 @@ export default function ComparisonTable({ items, summary }: ComparisonTableProps
                     <tbody>
                         {safeItems.map((item, idx) => {
                             const diff = item.difference ?? 0;
-                            const rowBg = diff > 0 ? '#fef2f2' : diff < 0 ? '#f0fdf4' : 'transparent';
+                            let rowBg = 'transparent';
+                            
+                            if (item.status === "ADDED") {
+                                rowBg = '#e6fffb';
+                            } else if (item.status === "REMOVED") {
+                                rowBg = '#fff1f0';
+                            } else if (item.status === "MODIFIED") {
+                                rowBg = '#fffbe6';
+                            }
 
                             return (
                                 <tr key={idx} style={{ ...styles.tr, backgroundColor: rowBg }}>
@@ -71,22 +79,16 @@ export default function ComparisonTable({ items, summary }: ComparisonTableProps
             </div>
 
             <div style={styles.footer}>
-                <div style={styles.summaryItem}>
-                    <span style={styles.summaryLabel}>Total V1:</span>
-                    <span style={styles.summaryValue}>₹ {(safeSummary.total_v1 ?? 0).toLocaleString()}</span>
-                </div>
-                <div style={styles.summaryItem}>
-                    <span style={styles.summaryLabel}>Total V2:</span>
-                    <span style={styles.summaryValue}>₹ {(safeSummary.total_v2 ?? 0).toLocaleString()}</span>
-                </div>
-                <div style={styles.summaryItemPrimary}>
-                    <span style={styles.summaryLabel}>Difference:</span>
-                    <span style={{
-                        ...styles.summaryValueBig,
-                        color: safeSummary.difference > 0 ? '#dc2626' : safeSummary.difference < 0 ? '#059669' : '#111827'
-                    }}>
-                        ₹ {(safeSummary.difference ?? 0).toLocaleString()}
-                    </span>
+                <div className="totals-section">
+                    <div>
+                        <strong>Total V1:</strong> ₹ {headerDiff?.grand_total.old || 0}
+                    </div>
+                    <div>
+                        <strong>Total V2:</strong> ₹ {headerDiff?.grand_total.new || 0}
+                    </div>
+                    <div>
+                        <strong>Difference:</strong> ₹ {headerDiff?.grand_total.difference || 0}
+                    </div>
                 </div>
             </div>
         </div>
