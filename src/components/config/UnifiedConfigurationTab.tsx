@@ -144,18 +144,15 @@ const lastHasDataRef = React.useRef<boolean | null>(null);
                 const rawAccessories = Array.isArray(cfg.accessories) ? cfg.accessories : [];
                 const accs = rawAccessories.map(mapAccessory).filter(Boolean);
 
-                return {
-                    ...cfg,
-                    product_detail: product,
-                    // ConfigurationTable expects 'driverData' to be the single driver object
-                    driverData: drivers.length > 0 ? drivers[0] : null,
-                    accessoriesData: accs,
-                    drivers: drivers,
-                    accessories: accs,
-                };
+             return {
+    ...cfg,
+    product_detail: product,
+    drivers: drivers,
+    accessories: accs,
+};
             });
 
-            console.log("Mapped Configurations:", mapped);
+            console.log("project Configu:", productConfigs);
 
             setProductConfigs(mapped);
             setDriverConfigs([]);
@@ -312,16 +309,34 @@ console.log("Grouped Data for Rendering:", groupedData);
                                     ₹
                                     {(
                                         // 1. Calculate Product Configurations (Product + Attached Driver + Attached Accessories)
-                                        area.products.reduce((s: number, p: any) => {
-                                            const productPrice = p.product_detail?.base_price || p.product_detail?.price || 0;
-                                            const driverPrice = p.driverData?.base_price || 0;
-                                            const accPrice = (p.accessoriesData || []).reduce(
-                                                (accSum: number, a: any) => accSum + (a.price || 0), 0
-                                            );
+                                 area.products.reduce((s: number, p: any) => {
 
-                                            const unitTotal = productPrice + driverPrice + accPrice;
-                                            return s + (p.quantity * unitTotal);
-                                        }, 0) +
+    const productQty = p.quantity || 1;
+
+    const productPrice =
+        p.product_detail?.base_price ||
+        p.product_detail?.price ||
+        0;
+
+    // DRIVERS TOTAL
+    const driversTotal = (p.drivers || []).reduce(
+        (dSum: number, d: any) =>
+            dSum + ((d.price || 0) * (d.quantity || 1) ),
+        0
+    );
+
+    // ACCESSORIES TOTAL ⭐ FIXED
+    const accessoriesTotal = (p.accessories || []).reduce(
+        (aSum: number, a: any) =>
+            aSum + ((a.price || 0) * (a.quantity || 1) ),
+        0
+    );
+    const productsTotal = productPrice * productQty;
+console.log(productsTotal,driversTotal,accessoriesTotal)
+
+    return s + productsTotal + driversTotal + accessoriesTotal;
+
+}, 0) +
 
                                         // 2. Standalone Drivers (if any)
                                         area.drivers.reduce((s: number, d: any) => s + (d.quantity * (d.driverData?.price || 0)), 0) +

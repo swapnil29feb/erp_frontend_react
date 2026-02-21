@@ -14,62 +14,75 @@ const ConfigurationTable: React.FC<ConfigurationTableProps> = ({ products }) => 
        1️⃣ GROUP DATA (PRODUCT / DRIVER / ACCESSORY)
     ========================================================= */
 
-    const productMap: Record<string, any> = {};
-    const driverMap: Record<string, any> = {};
-    const accessoryMap: Record<string, any> = {};
+    console.log("p:", products);
+   const productMap: Record<string, any> = {};
+const driverMap: Record<string, any> = {};
+const accessoryMap: Record<string, any> = {};
 
-    products.forEach((p) => {
-        const qty = p.quantity || 1;
+products.forEach((p) => {
 
-        /* ---------------- PRODUCT ---------------- */
-        const pKey = p.product_detail?.order_code || p.product_detail?.name || "unknown";
-        const pPrice = p.product_detail?.base_price || p.product_detail?.price || 0;
+    const productQty = p.quantity || 1;
 
-        if (!productMap[pKey]) {
-            productMap[pKey] = {
-                ...p.product_detail,
+    /* ---------------- PRODUCT ---------------- */
+    const pKey = p.product_detail?.order_code || "unknown";
+    const pPrice = p.product_detail?.base_price || p.product_detail?.price || 0;
+
+    if (!productMap[pKey]) {
+        productMap[pKey] = {
+            ...p.product_detail,
+            quantity: 0,
+            total: 0
+        };
+    }
+
+    productMap[pKey].quantity += productQty;
+    productMap[pKey].total += pPrice * productQty;
+
+
+    /* ---------------- DRIVERS (FIXED) ---------------- */
+    (p.drivers || []).forEach((drv: any) => {
+
+        const dKey = drv.order_code;
+        const dPrice = drv.price || 0;
+        const dQty = drv.quantity || 1;
+
+        const finalQty = dQty ;   // ⭐ KEY FIX
+
+        if (!driverMap[dKey]) {
+            driverMap[dKey] = {
+                ...drv,
                 quantity: 0,
                 total: 0
             };
         }
 
-        productMap[pKey].quantity += qty;
-        productMap[pKey].total += pPrice * qty;
+        driverMap[dKey].quantity += finalQty;
+        driverMap[dKey].total += dPrice * finalQty;
+    });
 
-        /* ---------------- DRIVER ---------------- */
-        if (p.driverData) {
-            const dKey = p.driverData.order_code;
-            const dPrice = p.driverData.price || 0;
 
-            if (!driverMap[dKey]) {
-                driverMap[dKey] = {
-                    ...p.driverData,
-                    quantity: 0,
-                    total: 0
-                };
-            }
+    /* ---------------- ACCESSORIES (FIXED) ---------------- */
+    (p.accessories || []).forEach((acc: any) => {
 
-            driverMap[dKey].quantity += qty;
-            driverMap[dKey].total += dPrice * qty;
+        const aKey = acc.order_code;
+        const aPrice = acc.price || 0;
+        const aQty = acc.quantity || 1;
+
+        const finalQty = aQty ;   // ⭐ KEY FIX
+
+        if (!accessoryMap[aKey]) {
+            accessoryMap[aKey] = {
+                ...acc,
+                quantity: 0,
+                total: 0
+            };
         }
 
-        /* ---------------- ACCESSORIES ---------------- */
-        (p.accessoriesData || []).forEach((acc: any) => {
-            const aKey = acc.order_code;
-            const aPrice = acc.price || 0;
-
-            if (!accessoryMap[aKey]) {
-                accessoryMap[aKey] = {
-                    ...acc,
-                    quantity: 0,
-                    total: 0
-                };
-            }
-
-            accessoryMap[aKey].quantity += qty;
-            accessoryMap[aKey].total += aPrice * qty;
-        });
+        accessoryMap[aKey].quantity += finalQty;
+        accessoryMap[aKey].total += aPrice * finalQty;
     });
+
+});
 
     const productData = Object.values(productMap);
     const driverData = Object.values(driverMap);
