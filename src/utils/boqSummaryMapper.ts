@@ -5,7 +5,7 @@ export const mapBOQSummary = (data: any) => {
     // The backend might return summary totals in a nested 'summary' object
     // with keys like LUMINAIRE / PRODUCT, DRIVER, ACCESSORY
     const nestedSummary = data.summary || {};
-
+    
     // Support both PRODUCT and LUMINAIRE keys as they are used interchangeably in this project
     const luminaireData = nestedSummary.LUMINAIRE || nestedSummary.PRODUCT || { quantity: 0, amount: 0 };
     const driverData = nestedSummary.DRIVER || { quantity: 0, amount: 0 };

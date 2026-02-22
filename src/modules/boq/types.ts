@@ -1,27 +1,36 @@
-
 export interface BOQVersion {
-    id: number;
-    version: number;
-    status: string;
-    created_at: string;
+  id: number;
+  version: number;
+  status: string;
+  created_at: string;
 }
 
 export interface BOQItem {
-    id: number;
-    area: string;
-    item_type?: 'Product' | 'Driver' | 'Accessory' | string;
-    item_name?: string;
-    product?: string; // Fallback for old schema
-    driver?: string;
-    accessories?: string;
-    qty: number;
-    unit_price: number;
-    total: number;
-    unit_rate?: number; // Backend usually uses unit_rate for component rate
+  id: number;
+  item_type: "PRODUCT" | "DRIVER" | "ACCESSORY";
+  quantity: number;
+  unit_price: string;
+  final_price: string;
+
+  product_details?: {
+    name: string;
+    order_code: string;
+    wattage?: number;
+  } | null;
+
+  driver_details?: {
+    driver_code: string;
+    driver_make?: string;
+  } | null;
+
+  accessory_details?: {
+    name: string;
+    type?: string;
+  } | null;
 }
 
 export interface BOQSummary {
-    subtotal: number;
-    margin_percent: number;
-    grand_total: number;
+  subtotal: number;
+  margin_percent: number;
+  grand_total: number;
 }
