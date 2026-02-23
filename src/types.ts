@@ -84,6 +84,8 @@ export interface Driver {
   voltage: string;
   quantity: number;
   masterDriverId?: number;
+    image_front?: string;   // add this
+  image_back?: string;    // add this
 }
 
 export interface Accessory {
@@ -94,6 +96,10 @@ export interface Accessory {
   specification: string;
   quantity: number;
   masterAccessoryId?: number;
+     image_front?: File;   // add this
+  image_back?: File;    // add this
+
+
 }
 
 export interface BOQ {

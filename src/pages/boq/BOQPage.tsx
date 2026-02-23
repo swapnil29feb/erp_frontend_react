@@ -257,7 +257,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
     if (!selectedProject) return;
     setLoading(true);
     try {
-      await boqService.generateBOQ(selectedProject.id);
+      await boqService.generateBOQ(selectedProject.id, selectedProject.areas?.[0]?.id,  selectedProject.inquiry_type);
       alert("BOQ generated successfully");
       await loadVersionsList(selectedProject.id);
       // new version will be selected auQtomatically by loadVersionsList logic
@@ -306,7 +306,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
       display: "flex",
       flexDirection: "column",
       height: "100vh",
-      backgroundColor: "#f3f4f6",
+      backgroundColor: "var(--bg-primary)",
       overflow: "hidden",
     },
     header: {
@@ -333,7 +333,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
     },
     leftHeader: {
       padding: "16px",
-      borderBottom: "1px solid #f3f4f6",
+      borderBottom: "1px solid var(--bg-primary)",
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
@@ -411,43 +411,80 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
   // ================= GROUP DATA BY ORDER CODE =================
   console.log("items", items);
   const groupedMap: Record<string, any> = {};
-  const productRows = React.useMemo(() => {
-    return items
-      .filter((i) => i.item_type === "PRODUCT")
-      .map((i) => ({
-        make: i.product_details?.name,
-        order_code: i.product_details?.order_code,
-        wattage: i.product_details?.wattage,
-        qty: i.quantity,
-        unit_price: Number(i.unit_price),
-        total: Number(i.final_price),
-      }));
-  }, [items]);
+const productRows = React.useMemo(() => {
+  const map: Record<string, any> = {};
 
-  const driverRows = React.useMemo(() => {
-    return items
-      .filter((i) => i.item_type === "DRIVER")
-      .map((i) => ({
-        make: i.driver_details?.driver_make || "—",
-        order_code: i.driver_details?.driver_code,
-        qty: i.quantity,
-        unit_price: Number(i.unit_price),
-        total: Number(i.final_price),
-      }));
-  }, [items]);
+  items
+    .filter((i) => i.item_type === "PRODUCT")
+    .forEach((i) => {
+      const key = i.product_details?.order_code || "UNKNOWN";
 
-  const accessoryRows = React.useMemo(() => {
-    return items
-      .filter((i) => i.item_type === "ACCESSORY")
-      .map((i) => ({
-        order_code: i.accessory_details?.name,
-        description: i.accessory_details?.type,
-        qty: i.quantity,
-        unit_price: Number(i.unit_price),
-        total: Number(i.final_price),
-      }));
-  }, [items]);
+      if (!map[key]) {
+        map[key] = {
+          make: i.product_details?.name,
+          order_code: key,
+          wattage: i.product_details?.wattage,
+          qty: 0,
+          unit_price: Number(i.unit_price),
+          total: 0,
+        };
+      }
 
+      map[key].qty += i.quantity;
+      map[key].total += Number(i.final_price);
+    });
+
+  return Object.values(map);
+}, [items]);
+
+const driverRows = React.useMemo(() => {
+  const map: Record<string, any> = {};
+
+  items
+    .filter((i) => i.item_type === "DRIVER")
+    .forEach((i) => {
+      const key = i.driver_details?.driver_code || "UNKNOWN";
+
+      if (!map[key]) {
+        map[key] = {
+          make: i.driver_details?.driver_make || "—",
+          order_code: key,
+          qty: 0,
+          unit_price: Number(i.unit_price),
+          total: 0,
+        };
+      }
+
+      map[key].qty += i.quantity;
+      map[key].total += Number(i.final_price);
+    });
+
+  return Object.values(map);
+}, [items]);
+const accessoryRows = React.useMemo(() => {
+  const map: Record<string, any> = {};
+
+  items
+    .filter((i) => i.item_type === "ACCESSORY")
+    .forEach((i) => {
+      const key = i.accessory_details?.name || "UNKNOWN";
+
+      if (!map[key]) {
+        map[key] = {
+          order_code: key,
+          description: i.accessory_details?.type,
+          qty: 0,
+          unit_price: Number(i.unit_price),
+          total: 0,
+        };
+      }
+
+      map[key].qty += i.quantity;
+      map[key].total += Number(i.final_price);
+    });
+
+  return Object.values(map);
+}, [items]);
   console.log("productRows:", productRows);
   console.log("driverRows:", driverRows);
   console.log("accessoryRows:", accessoryRows);
@@ -489,7 +526,7 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i}>
+              <tr key={r.order_code }>
                 
                 <td >{r.order_code}</td>
                 <td >{r.name||r.make||r.description}</td>
@@ -558,7 +595,7 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
                     style={{
                       padding: "10px 12px",
                       cursor: "pointer",
-                      borderBottom: "1px solid #f3f4f6",
+                      borderBottom: "1px solid var(--bg-primary)",
                     }}
                     onClick={() => handleProjectSelect(p)}
                     onMouseEnter={(e) =>
@@ -744,7 +781,7 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
             style={{
               margin: "0 0 20px 0",
               fontSize: "16px",
-              borderBottom: "2px solid #f3f4f6",
+              borderBottom: "2px solid var(--bg-primary)",
               paddingBottom: "10px",
             }}
           >
@@ -777,7 +814,7 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
                     display: "flex",
                     flexDirection: "column",
                     gap: "8px",
-                    border: "1px solid #f3f4f6",
+                    border: "1px solid var(--bg-primary)",
                   }}
                 >
                   {Object.entries(summary.type_summary).map(

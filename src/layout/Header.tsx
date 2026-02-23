@@ -1,8 +1,11 @@
 import { useAuth } from '../auth/AuthContext';
 import { useLocation } from 'react-router-dom';
 import type { FC } from 'react';
+import { useTheme } from "../context/ThemeContext";
 
-const Header: FC = () => {
+const Header = () => {
+    //   const { dark, toggle } = useTheme();
+
     const { user, logout } = useAuth();
     const location = useLocation();
 
@@ -57,7 +60,11 @@ const Header: FC = () => {
     };
 
     return (
+        
         <header style={styles.header}>
+              {/* <button onClick={toggle}>
+      {dark ? "🌞 Light" : "🌙 Dark"} */}
+    {/* </button> */}
             <h1 style={styles.title}>{getTitle(location.pathname)}</h1>
             <div style={styles.userSection}>
                 <span style={styles.username}>

@@ -99,17 +99,17 @@ export async function fetchConfigurations(params: {
     areaId?: number;
     subareaId?: number;
 }) {
+    let res;
+
     if (params.subareaId) {
-        return apiClient.get(`/configurations/by-subarea/${params.subareaId}/`);
+        res = await apiClient.get(`/configurations/by-subarea/${params.subareaId}/`);
+    } else if (params.areaId) {
+        res = await apiClient.get(`/configurations/by-area/${params.areaId}/`);
+    } else if (params.projectId) {
+        res = await apiClient.get(`/configurations/by-project/${params.projectId}/`);
+    } else {
+        return [];
     }
 
-    if (params.areaId) {
-        return apiClient.get(`/configurations/by-area/${params.areaId}/`);
-    }
-
-    if (params.projectId) {
-        return apiClient.get(`/configurations/by-project/${params.projectId}/`);
-    }
-
-    return { data: [] };
+    return handleListResponse(res);
 }

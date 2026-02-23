@@ -143,7 +143,7 @@ const ConfigurationWorkspace: React.FC = () => {
            const payload = {
     project_id: selectedProject?.id,
     area_id: isProjectOnly ? null : Number(selectedAreaId),
-
+            subarea_id: subarea ? subarea.id : null,
     products: selectedProducts.map((product) => ({
         product_id: product.product_id,
         quantity: product.quantity,

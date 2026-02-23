@@ -586,7 +586,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 .btn-secondary {
                     padding: 8px 16px;
                     border: 1px solid #d1d5db;
-                    background-color: #f3f4f6;
+                    background-color: var(--bg-primary);
                     color: #374151;
                     border-radius: 6px;
                     cursor: pointer;

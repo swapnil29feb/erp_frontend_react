@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import type { Accessory } from "../../services/accessoryService";
-
+import { Upload, Button } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 interface AccessoryFormModalProps {
     isOpen: boolean;
     mode: "create" | "edit";
@@ -29,7 +30,8 @@ const AccessoryFormModal: React.FC<AccessoryFormModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [apiError, setApiError] = useState<string | null>(null);
-
+const [frontFile, setFrontFile] = useState<File | null>(null);
+const [backFile, setBackFile] = useState<File | null>(null);
     useEffect(() => {
         if (isOpen) {
             if (mode === "edit" && initialValues) {
@@ -70,34 +72,26 @@ const AccessoryFormModal: React.FC<AccessoryFormModalProps> = ({
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!validate()) return;
+ const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
 
-        setLoading(true);
-        setApiError(null);
+    setLoading(true);
+    setApiError(null);
 
-        try {
-            await onSaved(formData);
-        } catch (err: any) {
-            console.error("Save error:", err);
-            let msg = "Failed to save accessory.";
-            if (err.response?.data) {
-                if (typeof err.response.data === "object") {
-                    const details = Object.entries(err.response.data)
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join(", ");
-                    msg += ` ${details}`;
-                } else {
-                    msg = err.response.data.toString();
-                }
-            }
-            setApiError(msg);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    try {
+    await onSaved({
+            ...formData,
+            image_front: frontFile || undefined,
+            image_back: backFile || undefined,
+        });
+    } catch (err: any) {
+        console.error("Save error:", err);
+        setApiError("Failed to save accessory.");
+    } finally {
+        setLoading(false);
+    }
+};
     if (!isOpen) return null;
 
     return (
@@ -212,7 +206,29 @@ const AccessoryFormModal: React.FC<AccessoryFormModalProps> = ({
                                 <span className="error-text">{errors.base_price}</span>
                             )}
                         </div>
+<div style={{ marginBottom: 20, display: 'flex', gap: 20 }}>
+  <Upload
+    beforeUpload={(file) => {
+      setFrontFile(file);
+      return false;
+    }}
+    maxCount={1}
+    listType="picture"
+  >
+    <Button icon={<InboxOutlined />}>Upload Front Image</Button>
+  </Upload>
 
+  <Upload
+    beforeUpload={(file) => {
+      setBackFile(file);
+      return false;
+    }}
+    maxCount={1}
+    listType="picture"
+  >
+    <Button icon={<InboxOutlined />}>Upload Back Image</Button>
+  </Upload>
+</div>
                         <div
                             className="form-group"
                             style={{

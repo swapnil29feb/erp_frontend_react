@@ -3,7 +3,7 @@ import { Card, Typography, Button, Spin, Divider } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import ConfigurationTable from '../../pages/projects/components/ConfigurationTable';
 import { getProjectConfigurations } from '../../services/configurationService';
-
+import { fetchConfigurations } from '../../services/configService';
 const { Title, Text } = Typography;
 
 interface UnifiedConfigurationTabProps {
@@ -47,7 +47,7 @@ const lastHasDataRef = React.useRef<boolean | null>(null);
         if (!projectId) return;
         setLoading(true);
         try {
-            const data = await getProjectConfigurations(projectId);
+            const data = await fetchConfigurations({projectId, subareaId});
             console.log("Raw data from API:", data);
 
             // Helper to safely parse numbers
@@ -202,29 +202,38 @@ useEffect(() => {
         );
     }
 
-    // Assign products
-    productConfigs.forEach(p => {
-        const key = useProjectWide ? 'project-wide' : p.area;
-        const area = map.get(key);
-         area.products.push(p);
-    });
+productConfigs.forEach(p => {
+    const key = useProjectWide ? 'project-wide' : p.area;
+
+    const areaBucket = map.get(key);
+
+    if (!areaBucket) {
+        console.warn("Area bucket not found for key:", key);
+        return; // 🔥 prevent crash
+    }
+
+    areaBucket.products.push(p);
+});
 
     // Assign drivers
-    driverConfigs.forEach(d => {
-        const key = useProjectWide ? 'project-wide' : d.area;
-        const area = map.get(key);
+  driverConfigs.forEach(d => {
+    const key = useProjectWide ? 'project-wide' : d.area;
+    const areaBucket = map.get(key);
 
-        if (area) area.drivers.push(d);
-    });
+    if (!areaBucket) return;
+
+    areaBucket.drivers.push(d);
+});
 
     // Assign accessories
-    accessoryConfigs.forEach(a => {
-        const key = useProjectWide ? 'project-wide' : a.area;
-        const area = map.get(key);
+  accessoryConfigs.forEach(a => {
+    const key = useProjectWide ? 'project-wide' : a.area;
+    const areaBucket = map.get(key);
 
-        if (area) area.accessories.push(a);
-    });
+    if (!areaBucket) return;
 
+    areaBucket.accessories.push(a);
+});
     return Array.from(map.values());
 
 }, [productConfigs, driverConfigs, accessoryConfigs, areas, isProjectLevel]);

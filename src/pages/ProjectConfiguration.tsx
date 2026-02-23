@@ -2,10 +2,10 @@
 import { useEffect, useState } from "react";
 import { getProjectConfigurations } from "../services/configurationService";
 import { useParams } from "react-router-dom";
-
+import { fetchConfigurations } from "../services/configService";
 const ProjectConfiguration = () => {
     const { projectId } = useParams();
-    const [configs, setConfigs] = useState([]);
+    const [configs, setConfigs] = useState<any>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -15,7 +15,7 @@ const ProjectConfiguration = () => {
     const loadConfigurations = async () => {
         try {
             setLoading(true);
-            const data = await getProjectConfigurations(Number(projectId));
+            const data = await fetchConfigurations({projectId: Number(projectId)});
             setConfigs(data);
         } catch (err) {
             console.error("Failed to load configurations", err);

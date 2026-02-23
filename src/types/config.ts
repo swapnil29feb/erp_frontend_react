@@ -18,6 +18,8 @@ export interface Driver {
     max_wattage: number;
     dimming_protocol: string;
     price: number;
+      image_front?: string;   // add this
+  image_back?: string;    // add this
 }
 
 export interface Accessory {
@@ -27,6 +29,9 @@ export interface Accessory {
     accessory_type: string;
     accessory_category: string;
     price: number;
+       image_front?: File;   // add this
+  image_back?: File;    // add this
+
 }
 
 export interface Configuration {

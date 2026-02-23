@@ -81,14 +81,14 @@ const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
         }
     };
 
-    const handleFormSaved = async (formData: Partial<Driver>) => {
-        try {
+
+const handleFormSaved = async (formData: FormData | Partial<Driver>) => {        try {
             if (formMode === 'create') {
-                await driverService.createDriver(formData);
+                await driverService.createDriver(formData as any);
                 message.success('Driver created successfully');
             } else {
                 if (selectedDriver) {
-                    await driverService.updateDriver(selectedDriver.id, formData);
+                    await driverService.updateDriver(selectedDriver.id, formData as any);
                     message.success('Driver updated successfully');
                 }
             }
@@ -247,6 +247,7 @@ const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
                                     </Col>
                                 </Row>
                             </Card>
+                            
                         </Col>
                     </Row>
                 )}

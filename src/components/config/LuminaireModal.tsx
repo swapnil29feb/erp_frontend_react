@@ -154,7 +154,7 @@ const modalStyles = {
     },
     header: {
         padding: '20px 24px',
-        borderBottom: '1px solid #f3f4f6',
+        borderBottom: '1px solid var(--bg-primary)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -174,7 +174,7 @@ const modalStyles = {
     },
     searchContainer: {
         padding: '16px 24px',
-        borderBottom: '1px solid #f3f4f6',
+        borderBottom: '1px solid var(--bg-primary)',
     },
     searchInput: {
         width: '100%',
