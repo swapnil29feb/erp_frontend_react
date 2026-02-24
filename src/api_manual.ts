@@ -198,6 +198,9 @@ class ApiClient {
             `configurations/configuration-drivers/`,
             {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
                 body: JSON.stringify(requestData),
             }
         );
@@ -217,6 +220,9 @@ class ApiClient {
             `configurations/configuration-accessories/`,
             {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
                 body: JSON.stringify(requestData),
             }
         );

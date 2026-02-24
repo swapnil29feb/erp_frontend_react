@@ -79,24 +79,38 @@ const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
         }
     };
 
-    const handleFormSaved = async (formData: Partial<Accessory>) => {
-        try {
-            if (formMode === 'create') {
-                await accessoryService.createAccessory(formData);
-                message.success('Accessory created successfully');
-            } else {
-                if (selectedAccessory) {
-                    await accessoryService.updateAccessory(selectedAccessory.id, formData);
-                    message.success('Accessory updated successfully');
-                }
-            }
-            setIsFormModalVisible(false);
-            fetchAccessories(currentPage, searchText);
-        } catch (err) {
-            message.error('Operation failed');
-        }
-    };
+const handleFormSaved = async (data: Partial<Accessory>) => {
+    try {
+        const formData = new FormData();
 
+        Object.entries(data).forEach(([key, value]) => {
+            if (value instanceof File) {
+                formData.append(key, value);
+            } else if (value !== undefined && value !== null) {
+                formData.append(key, String(value));
+            }
+        });
+
+        if (formMode === 'create') {
+            await accessoryService.createAccessory(formData as any);
+            message.success('Accessory created successfully');
+        } else {
+            if (selectedAccessory) {
+                await accessoryService.updateAccessory(
+                    selectedAccessory.id,
+                    formData as any
+                );
+                message.success('Accessory updated successfully');
+            }
+        }
+
+        setIsFormModalVisible(false);
+        fetchAccessories(currentPage, searchText);
+
+    } catch (err) {
+        message.error('Operation failed');
+    }
+};
     const columns: ColumnsType<Accessory> = [
         {
             title: 'Accessory Name',

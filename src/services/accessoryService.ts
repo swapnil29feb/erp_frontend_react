@@ -12,6 +12,9 @@ export interface Accessory {
     is_active: boolean;
     created_at: string;
     updated_at: string;
+       image_front?: File;   // add this
+  image_back?: File;    // add this
+
 }
 
 const mapToAccessory = (item: any): Accessory => ({

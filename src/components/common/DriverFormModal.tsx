@@ -1,15 +1,16 @@
 
 import React, { useState, useEffect } from "react";
 import type { Driver } from "../../services/driverService";
-
+import { Form, Upload ,Button } from 'antd';
+import type { UploadFile } from 'antd/es/upload/interface';
+import { InboxOutlined } from '@ant-design/icons';
 interface DriverFormModalProps {
     isOpen: boolean;
     mode: "create" | "edit";
     initialValues?: Partial<Driver>;
     onClose: () => void;
-    onSaved: (driver: Partial<Driver>) => Promise<void>;
+onSaved: (driver: FormData | Partial<Driver>) => Promise<void>;
 }
-
 const DriverFormModal: React.FC<DriverFormModalProps> = ({
     isOpen,
     mode,
@@ -29,7 +30,8 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [apiError, setApiError] = useState<string | null>(null);
-
+const [frontFile, setFrontFile] = useState<File | null>(null);
+const [backFile, setBackFile] = useState<File | null>(null);
     useEffect(() => {
         if (isOpen) {
             if (mode === "edit" && initialValues) {
@@ -70,33 +72,37 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!validate()) return;
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
 
-        setLoading(true);
-        setApiError(null);
+    setLoading(true);
+    setApiError(null);
 
-        try {
-            await onSaved(formData);
-        } catch (err: any) {
-            console.error("Save error:", err);
-            let msg = "Failed to save driver.";
-            if (err.response?.data) {
-                if (typeof err.response.data === "object") {
-                    const details = Object.entries(err.response.data)
-                        .map(([k, v]) => `${k}: ${v}`)
-                        .join(", ");
-                    msg += ` ${details}`;
-                } else {
-                    msg = err.response.data.toString();
-                }
-            }
-            setApiError(msg);
-        } finally {
-            setLoading(false);
+    try {
+        const submitData = new FormData();
+
+        Object.entries(formData).forEach(([key, value]) => {
+            submitData.append(key, String(value));
+        });
+
+        if (frontFile) {
+            submitData.append("image_front", frontFile);
         }
-    };
+
+        if (backFile) {
+            submitData.append("image_back", backFile);
+        }
+
+        await onSaved(submitData as any);
+
+    } catch (err: any) {
+        console.error("Save error:", err);
+        setApiError("Failed to save driver.");
+    } finally {
+        setLoading(false);
+    }
+};
 
     if (!isOpen) return null;
 
@@ -205,6 +211,33 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                                 placeholder="e.g. IP67"
                             />
                         </div>
+                        <div className="form-group">
+  <label>Front Image</label>
+  <Upload
+    beforeUpload={(file) => {
+      setFrontFile(file);
+      return false;
+    }}
+    maxCount={1}
+    listType="picture"
+  >
+    <Button icon={<InboxOutlined />}>Upload Front Image</Button>
+  </Upload>
+</div>
+
+<div className="form-group">
+  <label>Back Image</label>
+  <Upload
+    beforeUpload={(file) => {
+      setBackFile(file);
+      return false;
+    }}
+    maxCount={1}
+    listType="picture"
+  >
+    <Button icon={<InboxOutlined />}>Upload Back Image</Button>
+  </Upload>
+</div>
 
                         <div
                             className="form-group"
@@ -224,6 +257,7 @@ const DriverFormModal: React.FC<DriverFormModalProps> = ({
                                 }
                                 style={{ width: "auto" }}
                             />
+                          
                             <label
                                 style={{ margin: 0, cursor: "pointer" }}
                                 onClick={() =>

@@ -7,9 +7,8 @@ interface BOQTableProps {
 }
 
 export default function BOQTable({ items, isLocked, onPriceChange }: BOQTableProps) {
-    const safeItems = items || [];
 
-    if (safeItems.length === 0) {
+    if (!items || items.length === 0) {
         return (
             <div style={styles.emptyContainer}>
                 <div style={styles.emptyIcon}>📂</div>
@@ -19,84 +18,118 @@ export default function BOQTable({ items, isLocked, onPriceChange }: BOQTablePro
         );
     }
 
-    // Group items by Area
-    const groupedItems: { [key: string]: BOQItem[] } = {};
-    safeItems.forEach(item => {
-        if (!groupedItems[item.area]) {
-            groupedItems[item.area] = [];
-        }
-        groupedItems[item.area].push(item);
-    });
+    /* ---------------- HELPERS ---------------- */
+
+    const getOrderCode = (item: BOQItem) => {
+        if (item.item_type === "PRODUCT") return item.product_details?.order_code;
+        if (item.item_type === "DRIVER") return item.driver_details?.driver_code;
+        if (item.item_type === "ACCESSORY") return item.accessory_details?.name;
+        return "-";
+    };
+
+    const getDescription = (item: BOQItem) => {
+        if (item.item_type === "PRODUCT") return item.product_details?.name;
+        if (item.item_type === "DRIVER") return item.driver_details?.driver_make || "-";
+        if (item.item_type === "ACCESSORY") return item.accessory_details?.type || "-";
+        return "-";
+    };
+
+    const getPrice = (item: BOQItem) => Number(item.unit_price || 0);
+    const getTotal = (item: BOQItem) => Number(item.final_price || 0);
+
+    /* ---------------- SPLIT BY TYPE ---------------- */
+
+    const sections = [
+        { title: "Products", rows: items.filter(i => i.item_type === "PRODUCT") },
+        { title: "Drivers", rows: items.filter(i => i.item_type === "DRIVER") },
+        { title: "Accessories", rows: items.filter(i => i.item_type === "ACCESSORY") },
+    ];
+
+    const grandTotal = items.reduce((s, i) => s + getTotal(i), 0);
+
+    /* ---------------- RENDER ---------------- */
 
     return (
         <div style={styles.container}>
-            {Object.entries(groupedItems).map(([area, areaItems]) => {
-                const areaTotal = areaItems.reduce((acc, item) => acc + (item.total || 0), 0);
+
+            {sections.map(section => {
+
+                if (section.rows.length === 0) return null;
+
+                const sectionTotal = section.rows.reduce((s, r) => s + getTotal(r), 0);
 
                 return (
-                    <div key={area} style={{ marginBottom: '40px' }}>
+                    <div key={section.title} style={{ marginBottom: '40px' }}>
+
                         <div style={styles.areaHeader}>
-                            Area: {area}
+                            {section.title}
+                            <span style={{ float: 'right', color: '#2563eb', fontWeight: 700 }}>
+                                ₹ {sectionTotal.toLocaleString()}
+                            </span>
                         </div>
+
                         <div style={styles.dividerLine} />
+
                         <table style={styles.table}>
                             <thead>
                                 <tr>
-                                    <th style={styles.th}>Type</th>
-                                    <th style={styles.th}>Item</th>
+                                    <th style={styles.th}>Order Code</th>
+                                    <th style={styles.th}>Description</th>
                                     <th style={{ ...styles.th, textAlign: 'center' }}>Qty</th>
-                                    <th style={{ ...styles.th, textAlign: 'right' }}>Rate</th>
+                                    <th style={{ ...styles.th, textAlign: 'right' }}>Unit Price</th>
                                     <th style={{ ...styles.th, textAlign: 'right' }}>Total</th>
                                 </tr>
                             </thead>
+
                             <tbody>
-                                {areaItems.map((item) => (
+                                {section.rows.map(item => (
                                     <tr key={item.id} style={styles.tr}>
-                                        <td style={{ ...styles.td, fontWeight: '600', color: '#64748b', fontSize: '11px', textTransform: 'uppercase' }}>
-                                            {item.item_type || 'PRODUCT'}
+
+                                        <td style={{ ...styles.td, fontWeight: 600 }}>
+                                            {getOrderCode(item)}
                                         </td>
-                                        <td style={{ ...styles.td, fontWeight: '500' }}>
-                                            {item.item_name || item.product || 'Unknown Item'}
+
+                                        <td style={styles.td}>
+                                            {getDescription(item)}
                                         </td>
+
                                         <td style={{ ...styles.td, textAlign: 'center' }}>
-                                            {(item.qty || 0).toLocaleString()}
+                                            {item.quantity}
                                         </td>
+
                                         <td style={{ ...styles.td, textAlign: 'right' }}>
                                             {isLocked ? (
-                                                <span>₹ {(item.unit_rate || item.unit_price || 0).toLocaleString()}</span>
+                                                <>₹ {getPrice(item).toLocaleString()}</>
                                             ) : (
                                                 <div style={styles.priceInputWrapper}>
-                                                    <span style={{ marginRight: '4px' }}>₹</span>
+                                                    <span style={{ marginRight: 4 }}>₹</span>
                                                     <input
                                                         type="number"
-                                                        value={item.unit_rate || item.unit_price}
-                                                        onChange={(e) => onPriceChange?.(item.id, parseFloat(e.target.value) || 0)}
+                                                        value={getPrice(item)}
+                                                        onChange={(e) =>
+                                                            onPriceChange?.(item.id, parseFloat(e.target.value) || 0)
+                                                        }
                                                         style={styles.input}
                                                     />
                                                 </div>
                                             )}
                                         </td>
+
                                         <td style={{ ...styles.td, textAlign: 'right', fontWeight: 'bold' }}>
-                                            ₹ {(item.total || 0).toLocaleString()}
+                                            ₹ {getTotal(item).toLocaleString()}
                                         </td>
+
                                     </tr>
                                 ))}
-                                <tr style={{ backgroundColor: '#f8fafc' }}>
-                                    <td colSpan={4} style={{ ...styles.td, textAlign: 'right', fontWeight: 'bold' }}>
-                                        Area Total:
-                                    </td>
-                                    <td style={{ ...styles.td, textAlign: 'right', fontWeight: 'bold', color: '#2563eb' }}>
-                                        ₹ {areaTotal.toLocaleString()}
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
+
                         <div style={styles.dividerLine} />
                     </div>
                 );
             })}
 
-            <div style={styles.dividerLine} />
+            {/* GRAND TOTAL */}
             <div style={{
                 marginTop: '40px',
                 padding: '24px',
@@ -109,13 +142,12 @@ export default function BOQTable({ items, isLocked, onPriceChange }: BOQTablePro
             }}>
                 <span style={{ fontSize: '18px', fontWeight: '600' }}>Grand Total (INR):</span>
                 <span style={{ fontSize: '28px', fontWeight: '900', color: '#60a5fa' }}>
-                    ₹ {(safeItems.reduce((acc, item) => acc + (item.total || 0), 0)).toLocaleString()}
+                    ₹ {grandTotal.toLocaleString()}
                 </span>
             </div>
         </div>
     );
 }
-
 const styles = {
     container: {
         width: '100%',

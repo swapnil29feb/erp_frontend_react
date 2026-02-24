@@ -1,5 +1,4 @@
-
-import type { FC } from 'react';
+ import type { FC } from 'react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -45,7 +44,7 @@ const Sidebar: FC = () => {
             width: collapsed ? '60px' : '240px',
             height: '100vh',
             backgroundColor: '#111827',
-            color: '#f3f4f6',
+            color: 'var(--bg-primary)',
             display: 'flex',
             flexDirection: 'column' as const,
             flexShrink: 0,

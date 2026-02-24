@@ -66,7 +66,7 @@ export default function ProjectSearch({ onSelect }: Props) {
                                 setQuery(`${p.name} (${p.code})`);
                                 setShow(false);
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f3f4f6")}
+                            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-primary)")}
                             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#fff")}
                         >
                             <div style={styles.itemName}>{p.name}</div>
@@ -108,7 +108,7 @@ const styles = {
     item: {
         padding: "10px 12px",
         cursor: "pointer",
-        borderBottom: "1px solid #f3f4f6",
+        borderBottom: "1px solid var(--bg-primary)",
         transition: "background 0.2s",
     },
     itemName: {

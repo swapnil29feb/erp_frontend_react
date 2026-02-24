@@ -11,6 +11,8 @@ export interface Driver {
     is_active: boolean;
     created_at?: string;
     updated_at?: string;
+      image_front?: string;   // add this
+  image_back?: string;    // add this
 }
 
 // Map backend fields to frontend model

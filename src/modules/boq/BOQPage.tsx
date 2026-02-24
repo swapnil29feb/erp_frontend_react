@@ -40,7 +40,7 @@ export default function BOQPage({ projectId: initialProjectId, initialBoqId }: B
     const [showMarginModal, setShowMarginModal] = useState(false);
     const [modalMargin, setModalMargin] = useState<number>(0);
     const [showApproveModal, setShowApproveModal] = useState(false);
-
+console.log(items)
     // Derived Summary
     const totals = useMemo(() => {
         const subtotal = items.reduce((acc, item) => acc + (item.unit_price * item.qty), 0);

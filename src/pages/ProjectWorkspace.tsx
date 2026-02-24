@@ -203,35 +203,58 @@ const ProjectWorkspace: FC = () => {
         setShowSubareaModal(true);
     };
 
-    const handleCreateArea = async () => {
-        if (!project || !areaForm.name.trim()) return;
-        try {
-            await apiClient.post(`/projects/projects/${project.id}/areas/`, {
-                project: project.id,
-                name: areaForm.name.trim(),
-            });
-            setShowAreaModal(false);
-            setAreaForm({ name: "" });
-            await loadAreas();
-        } catch (err) {
-            alert("Failed to create area");
-        }
-    };
+const handleCreateArea = async () => {
+    if (!project || !areaForm.name.trim()) return;
 
-    const handleCreateSubarea = async () => {
-        if (!selectedArea || !subareaForm.name.trim()) return;
-        try {
-            await apiClient.post(`/projects/areas/${selectedArea.id}/subareas/`, {
+    try {
+        const res = await apiClient.post(`/projects/projects/${project.id}/areas/`, {
+            project: project.id,
+            name: areaForm.name.trim(),
+        });
+
+        const newArea = res.data;
+
+        setShowAreaModal(false);
+        setAreaForm({ name: "" });
+
+        await loadAreas();
+
+        // 🔥 Important
+        setSelectedArea(newArea);
+        setSelectedSubarea(null);
+        setActiveTab("areas");
+
+    } catch (err) {
+        alert("Failed to create area");
+    }
+};
+ const handleCreateSubarea = async () => {
+    if (!selectedArea || !subareaForm.name.trim()) return;
+
+    try {
+        const res = await apiClient.post(
+            `/projects/areas/${selectedArea.id}/subareas/`,
+            {
                 area: selectedArea.id,
                 name: subareaForm.name.trim(),
-            });
-            setShowSubareaModal(false);
-            setSubareaForm({ name: "" });
-            await loadSubareas(selectedArea.id);
-        } catch (err) {
-            alert("Failed to create subarea");
-        }
+            }
+        );
+
+        const newSubarea = res.data;
+
+        setShowSubareaModal(false);
+        setSubareaForm({ name: "" });
+
+        await loadSubareas(selectedArea.id);
+
+        // 🔥 Important
+        setSelectedSubarea(newSubarea);
+        setActiveTab("configuration");
+
+    } catch (err) {
+        alert("Failed to create subarea");
     }
+};
 
     const handleDeleteConfig = async (configId: number) => {
         try {
@@ -347,6 +370,7 @@ const ProjectWorkspace: FC = () => {
                 }
                 return (
                     <UnifiedConfigurationTab
+                        key={`${selectedArea?.id || 0}-${selectedSubarea?.id || 0}`}
                         projectId={project?.id || 0}
                         subareaId={selectedSubarea?.id}
                         isProjectLevel={isProjectLevel}

@@ -3,7 +3,7 @@ import { Card, Typography, Button, Spin, Divider } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import ConfigurationTable from '../../pages/projects/components/ConfigurationTable';
 import { getProjectConfigurations } from '../../services/configurationService';
-
+import { fetchConfigurations } from '../../services/configService';
 const { Title, Text } = Typography;
 
 interface UnifiedConfigurationTabProps {
@@ -17,7 +17,7 @@ interface UnifiedConfigurationTabProps {
     areas: any[];
     onAddProduct: (areaId: number) => void;
     onDelete: (id: number) => void;
-    onUpdateQty: (id: number, qty: number) => void;
+    // onUpdateQty: (id: number, qty: number) => void;
     onDataLoaded?: (hasData: boolean) => void;
 }
 
@@ -34,20 +34,20 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
     areas,
     onAddProduct,
     onDelete,
-    onUpdateQty,
+    // onUpdateQty,
     onDataLoaded
 }) => {
     const [loading, setLoading] = useState(false);
     const [productConfigs, setProductConfigs] = useState<any[]>([]);
     const [driverConfigs, setDriverConfigs] = useState<any[]>([]);
     const [accessoryConfigs, setAccessoryConfigs] = useState<any[]>([]);
-    const lastHasDataRef = React.useRef<boolean | null>(null);
+const lastHasDataRef = React.useRef<boolean | null>(null);
 
     const loadData = useCallback(async () => {
         if (!projectId) return;
         setLoading(true);
         try {
-            const data = await getProjectConfigurations(projectId);
+            const data = await fetchConfigurations({projectId, subareaId});
             console.log("Raw data from API:", data);
 
             // Helper to safely parse numbers
@@ -144,18 +144,15 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
                 const rawAccessories = Array.isArray(cfg.accessories) ? cfg.accessories : [];
                 const accs = rawAccessories.map(mapAccessory).filter(Boolean);
 
-                return {
-                    ...cfg,
-                    product_detail: product,
-                    // ConfigurationTable expects 'driverData' to be the single driver object
-                    driverData: drivers.length > 0 ? drivers[0] : null,
-                    accessoriesData: accs,
-                    drivers: drivers,
-                    accessories: accs,
-                };
+             return {
+    ...cfg,
+    product_detail: product,
+    drivers: drivers,
+    accessories: accs,
+};
             });
 
-            console.log("Mapped Configurations:", mapped);
+            console.log("project Configu:", productConfigs);
 
             setProductConfigs(mapped);
             setDriverConfigs([]);
@@ -171,66 +168,75 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
         loadData();
     }, [projectId]);
 
-    useEffect(() => {
-        if (!loading && onDataLoaded) {
-            const hasData = productConfigs.length > 0;
+useEffect(() => {
+    if (!loading && onDataLoaded) {
+        const hasData = productConfigs.length > 0;
 
-            // prevent infinite parent update loop
-            if (lastHasDataRef.current !== hasData) {
-                lastHasDataRef.current = hasData;
-                onDataLoaded(hasData);
-            }
+        // prevent infinite parent update loop
+        if (lastHasDataRef.current !== hasData) {
+            lastHasDataRef.current = hasData;
+            onDataLoaded(hasData);
         }
-    }, [loading, productConfigs.length, onDataLoaded]);
+    }
+}, [loading, productConfigs.length, onDataLoaded]);
 
-    const groupedData = useMemo(() => {
+ const groupedData = useMemo(() => {
 
-        // If no areas OR project level → make virtual area
-        const useProjectWide = isProjectLevel || !areas || areas.length === 0;
+    // If no areas OR project level → make virtual area
+    const useProjectWide = isProjectLevel || areas.length === 0;
 
-        const map = new Map();
+    const map = new Map();
 
-        // Create area buckets
-        if (useProjectWide) {
-            map.set('project-wide', {
-                id: null,
-                name: 'Project Wide Configuration',
-                products: [],
-                drivers: [],
-                accessories: [],
-            });
-        } else {
-            areas.forEach(area =>
-                map.set(area.id, { ...area, products: [], drivers: [], accessories: [] })
-            );
-        }
-
-        // Assign products
-        productConfigs.forEach(p => {
-            const key = useProjectWide ? 'project-wide' : p.area;
-            const area = map.get(key);
-            if (area) area.products.push(p);
+    // Create area buckets
+    if (useProjectWide) {
+        map.set('project-wide', {
+            id: null,
+            name: 'Project Wide Configuration',
+            products: [],
+            drivers: [],
+            accessories: [],
         });
+    } else {
+        areas.forEach(area =>
+            map.set(area.id, { ...area, products: [], drivers: [], accessories: [] })
+        );
+    }
 
-        // Assign drivers
-        driverConfigs.forEach(d => {
-            const key = useProjectWide ? 'project-wide' : d.area;
-            const area = map.get(key);
+productConfigs.forEach(p => {
+    const key = useProjectWide ? 'project-wide' : p.area;
 
-            if (area) area.drivers.push(d);
-        });
+    const areaBucket = map.get(key);
 
-        // Assign accessories
-        accessoryConfigs.forEach(a => {
-            const key = useProjectWide ? 'project-wide' : a.area;
-            const area = map.get(key);
+    if (!areaBucket) {
+        console.warn("Area bucket not found for key:", key);
+        return; // 🔥 prevent crash
+    }
 
-            if (area) area.accessories.push(a);
-        });
+    areaBucket.products.push(p);
+});
 
-        return Array.from(map.values());
+    // Assign drivers
+  driverConfigs.forEach(d => {
+    const key = useProjectWide ? 'project-wide' : d.area;
+    const areaBucket = map.get(key);
 
-    }, [productConfigs, driverConfigs, accessoryConfigs, areas, isProjectLevel]);
+    if (!areaBucket) return;
+
+    areaBucket.drivers.push(d);
+});
+
+    // Assign accessories
+  accessoryConfigs.forEach(a => {
+    const key = useProjectWide ? 'project-wide' : a.area;
+    const areaBucket = map.get(key);
+
+    if (!areaBucket) return;
+
+    areaBucket.accessories.push(a);
+});
+    return Array.from(map.values());
+
+}, [productConfigs, driverConfigs, accessoryConfigs, areas, isProjectLevel]);
 
     const hasAnyConfig =
         productConfigs.length > 0 ||
@@ -244,7 +250,7 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
             </div>
         );
     }
-    console.log("Grouped Data for Rendering:", groupedData);
+console.log("Grouped Data for Rendering:", groupedData);
     return (
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {groupedData.map((area) => (
@@ -276,6 +282,11 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
                         {area.products.length > 0 && (
                             <ConfigurationTable
                                 products={area.products}
+                                drivers={[]}
+                                accessories={[]}
+                                onDelete={onDelete}
+                                // onUpdateQty={onUpdateQty}
+                                isLocked={isLocked}
                             />
                         )}
 
@@ -307,16 +318,34 @@ const UnifiedConfigurationTab: React.FC<UnifiedConfigurationTabProps> = ({
                                     ₹
                                     {(
                                         // 1. Calculate Product Configurations (Product + Attached Driver + Attached Accessories)
-                                        area.products.reduce((s: number, p: any) => {
-                                            const productPrice = p.product_detail?.base_price || p.product_detail?.price || 0;
-                                            const driverPrice = p.driverData?.base_price || 0;
-                                            const accPrice = (p.accessoriesData || []).reduce(
-                                                (accSum: number, a: any) => accSum + (a.price || 0), 0
-                                            );
+                                 area.products.reduce((s: number, p: any) => {
 
-                                            const unitTotal = productPrice + driverPrice + accPrice;
-                                            return s + (p.quantity * unitTotal);
-                                        }, 0) +
+    const productQty = p.quantity || 1;
+
+    const productPrice =
+        p.product_detail?.base_price ||
+        p.product_detail?.price ||
+        0;
+
+    // DRIVERS TOTAL
+    const driversTotal = (p.drivers || []).reduce(
+        (dSum: number, d: any) =>
+            dSum + ((d.price || 0) * (d.quantity || 1) ),
+        0
+    );
+
+    // ACCESSORIES TOTAL ⭐ FIXED
+    const accessoriesTotal = (p.accessories || []).reduce(
+        (aSum: number, a: any) =>
+            aSum + ((a.price || 0) * (a.quantity || 1) ),
+        0
+    );
+    const productsTotal = productPrice * productQty;
+console.log(productsTotal,driversTotal,accessoriesTotal)
+
+    return s + productsTotal + driversTotal + accessoriesTotal;
+
+}, 0) +
 
                                         // 2. Standalone Drivers (if any)
                                         area.drivers.reduce((s: number, d: any) => s + (d.quantity * (d.driverData?.price || 0)), 0) +
