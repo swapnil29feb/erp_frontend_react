@@ -19,7 +19,7 @@
   font-size: 14px;
   line-height: 1.4;
   color: var(--primary-text);
-  background-color: var(--bg-primary);
+  background-color: #f3f4f6;
 
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -89,7 +89,7 @@ body {
 }
 
 .erp-row-clickable:hover {
-  background: var(--bg-primary) !important;
+  background: #f3f4f6 !important;
 }
 
 /* Toolbar & Footer */

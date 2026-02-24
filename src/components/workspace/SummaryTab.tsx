@@ -7,14 +7,19 @@ const { Title, Text } = Typography;
 
 interface SummaryTabProps {
     projectId: number;
+    areaid?: number;
+    subareaid?: number;
+    isProjectLevel?: boolean;
+    summary?: any;
+
     onGenerateSuccess?: () => void;
 }
 
-const SummaryTab: React.FC<SummaryTabProps> = ({ projectId, onGenerateSuccess }) => {
+const SummaryTab: React.FC<SummaryTabProps> = ({ projectId, areaid, subareaid, isProjectLevel, onGenerateSuccess }) => {
     const [summary, setSummary] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
-
+console.log("in workspace summmary")
     useEffect(() => {
         const loadSummary = async () => {
             setLoading(true);

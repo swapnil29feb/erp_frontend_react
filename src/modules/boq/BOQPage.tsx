@@ -228,17 +228,16 @@ console.log(items)
         }
     };
 
-    const handlePriceChange = (itemId: number, newPrice: number) => {
-        setItems(prev => prev.map(item => {
-            if (item.id === itemId) {
-                const updatedPrice = newPrice;
-                const updatedTotal = updatedPrice * item.qty;
-                return { ...item, unit_price: updatedPrice, total: updatedTotal };
-            }
-            return item;
-        }));
-    };
-
+  const handlePriceChange = (itemId: number, newPrice: number) => {
+    setItems(prev => prev.map(item => {
+        if (item.id === itemId) {
+            const updatedPrice = newPrice;
+            const updatedTotal = updatedPrice * item.qty;
+            return { ...item, unit_price: updatedPrice.toString(), total: updatedTotal };
+        }
+        return item;
+    }));
+};
     const isLocked = status === 'APPROVED' || status === 'FINAL';
 
 

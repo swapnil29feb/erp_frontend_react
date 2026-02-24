@@ -11,18 +11,22 @@ export const boqService = {
         }
     },
 
-    getBOQSummaryDetail: async (boqId: number | string) => {
-        try {
-            const response = await apiClient.get(`/boq/summary/detail/${boqId}/`);
-            return response.data;
-        } catch (error: any) {
-            if (error?.response?.status === 404) {
-                return null;
+ getBOQSummaryDetail: async (boqId: number | string, areaId?: number, subareaId?: number) => {
+    try {
+        const response = await apiClient.get(`/boq/summary/detail/${boqId}/`, {
+            params: {
+                area_id: areaId,
+                subarea_id: subareaId
             }
-            throw error;
+        });
+        return response.data;
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            return null;
         }
-    },
-
+        throw error;
+    }
+},
     applyMargin: async (boqId: number | string, percent: number) => {
         try {
             const response = await apiClient.post(`/boq/apply-margin/${boqId}/`, {

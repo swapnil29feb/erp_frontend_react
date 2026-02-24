@@ -5,6 +5,10 @@ import { boqService } from "../../services/boqService";
 interface SummaryProps {
     configurations: any[];
     projectId?: number;
+    isProjectLevel?: boolean;
+    areaId?: number;
+    subareaId?: number;
+
     onBoqGenerated?: (boqId: number) => void;
 }
 
@@ -13,16 +17,16 @@ const format = (val: any) => {
     return isNaN(n) ? "0" : n.toLocaleString('en-IN');
 };
 
-const SummaryTab: React.FC<SummaryProps> = ({ configurations, projectId, onBoqGenerated }) => {
+const SummaryTab: React.FC<SummaryProps> = ({ configurations, projectId, isProjectLevel, areaId, subareaId,  onBoqGenerated }) => {
     const [generating, setGenerating] = useState(false);
     const [existingBoq, setExistingBoq] = useState<any>(null);
-
+console.log("in config summary")
     // Check for existing BOQ on load
     React.useEffect(() => {
         const checkExistingBOQ = async () => {
             if (!projectId) return;
             try {
-                const latest = await boqService.getLatestBOQ(projectId);
+                const latest = await boqService.getLatestBOQ(projectId, areaId, subareaId);
                 if (latest && (latest.boq_id || latest.id)) {
                     setExistingBoq(latest);
                 } else {

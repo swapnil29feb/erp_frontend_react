@@ -12,7 +12,7 @@ const Sidebar: FC = () => {
             width: collapsed ? '60px' : '240px',
             height: '100vh',
             backgroundColor: '#111827',
-            color: 'var(--bg-primary)',
+            color: '#f3f4f6',
             display: 'flex',
             flexDirection: 'column' as const,
             flexShrink: 0,

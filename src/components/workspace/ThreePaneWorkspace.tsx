@@ -45,7 +45,7 @@ const ThreePaneWorkspace: FC<ThreePaneWorkspaceProps> = ({
             display: 'flex',
             height: 'calc(100vh - 64px)',
             overflow: 'hidden',
-            backgroundColor: 'var(--bg-primary)',
+            backgroundColor: '#f3f4f6',
             width: '100%',
         },
         pane: {
@@ -70,7 +70,7 @@ const ThreePaneWorkspace: FC<ThreePaneWorkspaceProps> = ({
         },
         header: {
             padding: '16px 20px',
-            borderBottom: '1px solid var(--bg-primary)',
+            borderBottom: '1px solid #f3f4f6',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -158,7 +158,7 @@ const ThreePaneWorkspace: FC<ThreePaneWorkspaceProps> = ({
             fontSize: '10px',
             padding: '2px 8px',
             borderRadius: '999px',
-            backgroundColor: 'var(--bg-primary)',
+            backgroundColor: '#f3f4f6',
             color: '#6b7280',
             fontWeight: '600',
         }

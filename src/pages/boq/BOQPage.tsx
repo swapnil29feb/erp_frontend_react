@@ -15,30 +15,32 @@ interface BOQVersion {
   status: string;
   created_at: string;
   is_locked: boolean;
+  area_id?: number;
+  subarea_id?: number;
+  project_id?: number;
+  
 }
 
 interface BOQItem {
   id: number;
   item_type: "PRODUCT" | "DRIVER" | "ACCESSORY";
-  quantity: number;
+  quantity: number; // renamed 'qty' to 'quantity' for clarity
   unit_price: string;
   final_price: string;
-
   product_details?: {
     name: string;
     order_code: string;
     wattage?: number;
   } | null;
-
   driver_details?: {
     driver_code: string;
     driver_make?: string;
   } | null;
-
   accessory_details?: {
     name: string;
     type?: string;
   } | null;
+  // add 'quantity' property
 }
 interface BOQSummary {
   subtotal: number;
@@ -51,11 +53,14 @@ interface BOQSummary {
 }
 interface BOQPageProps {
   projectId?: number;
+  areaId?: number;
+  subareaId?: number;
 }
 
-const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
+const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId,areaId: propAreaId}) => {
   const { projectId: urlProjectId } = useParams<{ projectId: string }>();
   const effectiveProjectId = propProjectId || Number(urlProjectId);
+  const effectiveAreaId = propAreaId || undefined;
   const isStandalone = !propProjectId;
 
   const navigate = useNavigate();
@@ -98,30 +103,30 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
 
   // -- API Wrappers --
   console.log("Items in BOQPage:", items);
-  const loadBOQDetail = useCallback(async (boqId: number) => {
-    setLoading(true);
-    try {
-      const data = await boqService.getBOQSummaryDetail(boqId);
-      console.log("Fetched BOQ Detail:", data);
+const loadBOQDetail = useCallback(async (boqId: number, areaId?: number, subareaId?: number) => {
+  setLoading(true);
+  try {
+    const data = await boqService.getBOQSummaryDetail(boqId, areaId, subareaId);
+    console.log("Fetched BOQ Detail:", data);
 
-      if (data) {
-        // ✅ KEEP RAW ITEMS (IMPORTANT)
-        setItems(data.items || []);
+    if (data) {
+      // ✅ KEEP RAW ITEMS (IMPORTANT)
+      setItems(data.items || []);
 
-        // ❌ REMOVE OLD TRANSFORMATION
-        setBoqItems([]);
+      // ❌ REMOVE OLD TRANSFORMATION
+      setBoqItems([]);
 
-        const mapped = mapBOQSummary(data);
-        setSummary(mapped);
-        setMarginPercent(data.margin_percent || 0);
-      }
-    } catch (err) {
-      console.error("Failed to load BOQ detail", err);
-      setError("Failed to load BOQ items.");
-    } finally {
-      setLoading(false);
+      const mapped = mapBOQSummary(data);
+      setSummary(mapped);
+      setMarginPercent(data.margin_percent || 0);
     }
-  }, []);
+  } catch (err) {
+    console.error("Failed to load BOQ detail", err);
+    setError("Failed to load BOQ items.");
+  } finally {
+    setLoading(false);
+  }
+}, [boqService]);
   const loadVersionsList = useCallback(async (projId: number) => {
     setLoading(true);
     try {
@@ -176,7 +181,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
   // 2. Load detail when version changes
   useEffect(() => {
     if (selectedVersion) {
-      loadBOQDetail(selectedVersion.id);
+      loadBOQDetail(selectedVersion.id, selectedVersion.area_id, selectedVersion.subarea_id);
     }
   }, [selectedVersion, loadBOQDetail]);
 
@@ -225,7 +230,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
     setLoading(true);
     try {
       await boqService.applyMargin(selectedVersion.id, marginPercent);
-      await loadBOQDetail(selectedVersion.id);
+      await loadBOQDetail(selectedVersion.id, selectedVersion.area_id, selectedVersion.subarea_id);
     } catch (err) {
       alert("Failed to apply margin.");
     } finally {
@@ -257,7 +262,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
     if (!selectedProject) return;
     setLoading(true);
     try {
-      await boqService.generateBOQ(selectedProject.id, selectedProject.areas?.[0]?.id,  selectedProject.inquiry_type);
+      await boqService.generateBOQ(selectedProject.id);
       alert("BOQ generated successfully");
       await loadVersionsList(selectedProject.id);
       // new version will be selected auQtomatically by loadVersionsList logic
@@ -306,7 +311,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
       display: "flex",
       flexDirection: "column",
       height: "100vh",
-      backgroundColor: "var(--bg-primary)",
+      backgroundColor: "#f3f4f6",
       overflow: "hidden",
     },
     header: {
@@ -333,7 +338,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId }) => {
     },
     leftHeader: {
       padding: "16px",
-      borderBottom: "1px solid var(--bg-primary)",
+      borderBottom: "1px solid #f3f4f6",
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
@@ -595,7 +600,7 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
                     style={{
                       padding: "10px 12px",
                       cursor: "pointer",
-                      borderBottom: "1px solid var(--bg-primary)",
+                      borderBottom: "1px solid #f3f4f6",
                     }}
                     onClick={() => handleProjectSelect(p)}
                     onMouseEnter={(e) =>
@@ -781,7 +786,7 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
             style={{
               margin: "0 0 20px 0",
               fontSize: "16px",
-              borderBottom: "2px solid var(--bg-primary)",
+              borderBottom: "2px solid #f3f4f6",
               paddingBottom: "10px",
             }}
           >
@@ -814,7 +819,7 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
                     display: "flex",
                     flexDirection: "column",
                     gap: "8px",
-                    border: "1px solid var(--bg-primary)",
+                    border: "1px solid #f3f4f6",
                   }}
                 >
                   {Object.entries(summary.type_summary).map(

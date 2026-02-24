@@ -392,6 +392,10 @@ const handleCreateArea = async () => {
                 return (
                     <SummaryTab
                         projectId={project?.id || 0}
+                        areaid={selectedArea?.id}
+                        subareaid={selectedSubarea?.id}
+                        isProjectLevel={isProjectLevel}
+                        summary={summary}
                         onGenerateSuccess={() => {
                             setActiveTab('boq');
                             // Refresh configs based on project type

@@ -442,7 +442,7 @@ const Projects: FC = () => {
                                     <td style={{ fontWeight: '600', color: 'var(--primary-text)' }}>{p.name}</td>
                                     <td>{p.client_name}</td>
                                     <td>
-                                        <span style={{ fontSize: '11px', padding: '2px 6px', background: 'var(--bg-primary)', borderRadius: '4px' }}>
+                                        <span style={{ fontSize: '11px', padding: '2px 6px', background: '#f3f4f6', borderRadius: '4px' }}>
                                             {p.segment_area}
                                         </span>
                                     </td>
