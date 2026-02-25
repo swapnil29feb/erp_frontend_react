@@ -57,10 +57,11 @@ interface BOQPageProps {
   subareaId?: number;
 }
 
-const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId,areaId: propAreaId}) => {
+const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId,areaId: propAreaId,subareaId: propSubareaId}) => {
   const { projectId: urlProjectId } = useParams<{ projectId: string }>();
   const effectiveProjectId = propProjectId || Number(urlProjectId);
   const effectiveAreaId = propAreaId || undefined;
+  const effectiveSubareaId = propSubareaId || undefined;
   const isStandalone = !propProjectId;
 
   const navigate = useNavigate();
@@ -106,6 +107,7 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId,areaId: prop
 const loadBOQDetail = useCallback(async (boqId: number, areaId?: number, subareaId?: number) => {
   setLoading(true);
   try {
+    console.log(`Loading BOQ Detail for BOQ ID: ${boqId}, Area ID: ${areaId}, Subarea ID: ${subareaId}`);
     const data = await boqService.getBOQSummaryDetail(boqId, areaId, subareaId);
     console.log("Fetched BOQ Detail:", data);
 
@@ -130,7 +132,7 @@ const loadBOQDetail = useCallback(async (boqId: number, areaId?: number, subarea
   const loadVersionsList = useCallback(async (projId: number) => {
     setLoading(true);
     try {
-      const data = await boqService.getVersions(projId);
+      const data = await boqService.getVersions(projId, propAreaId, propSubareaId);
       const list = Array.isArray(data) ? data : [];
       // Sort descending by version number
       const sorted = list.sort(
@@ -181,9 +183,9 @@ const loadBOQDetail = useCallback(async (boqId: number, areaId?: number, subarea
   // 2. Load detail when version changes
   useEffect(() => {
     if (selectedVersion) {
-      loadBOQDetail(selectedVersion.id, selectedVersion.area_id, selectedVersion.subarea_id);
+      loadBOQDetail(selectedVersion.id, propAreaId, propSubareaId);
     }
-  }, [selectedVersion, loadBOQDetail]);
+  }, [selectedVersion, loadBOQDetail, propAreaId, propSubareaId]);
 
   // 3. Search logic
   useEffect(() => {
@@ -230,7 +232,7 @@ const loadBOQDetail = useCallback(async (boqId: number, areaId?: number, subarea
     setLoading(true);
     try {
       await boqService.applyMargin(selectedVersion.id, marginPercent);
-      await loadBOQDetail(selectedVersion.id, selectedVersion.area_id, selectedVersion.subarea_id);
+      await loadBOQDetail(selectedVersion.id, propAreaId, propSubareaId);
     } catch (err) {
       alert("Failed to apply margin.");
     } finally {
@@ -682,6 +684,8 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
                 onClick={() => setSelectedVersion(v)}
               >
                 <div
+
+
                   style={{
                     display: "flex",
                     justifyContent: "space-between",

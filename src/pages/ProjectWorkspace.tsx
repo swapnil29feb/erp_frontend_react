@@ -411,6 +411,8 @@ const handleCreateArea = async () => {
             case 'boq':
                 return <ProjectBOQTab
                     projectId={project?.id || 0}
+                    areaId={selectedArea?.id}
+                    subareaId={selectedSubarea?.id}
                     hasConfig={productConfigs.length > 0}
                 />;
             case 'quotation':

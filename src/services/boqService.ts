@@ -1,9 +1,14 @@
 import apiClient from '../api/apiClient';
 
 export const boqService = {
-    getVersions: async (projectId: number | string) => {
+    getVersions: async (projectId: number | string, areaId?: number, subareaId?: number) => {
         try {
-            const response = await apiClient.get(`/boq/versions/${projectId}/`);
+            const response = await apiClient.get(`/boq/versions/${projectId}/`, {
+                    params: {
+                        area_id: areaId,
+                        subarea_id: subareaId
+                    } 
+            });
             return response.data;
         } catch (error) {
             console.error('Error fetching BOQ versions:', error);

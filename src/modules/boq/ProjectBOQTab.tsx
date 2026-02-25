@@ -4,10 +4,12 @@ import BOQComparePage from './BOQComparePage';
 
 interface ProjectBOQTabProps {
     projectId: number;
+    areaId?: number;
+    subareaId?: number;
     hasConfig?: boolean;
 }
 
-export default function ProjectBOQTab({ projectId, hasConfig = true }: ProjectBOQTabProps) {
+export default function ProjectBOQTab({ projectId, areaId, subareaId, hasConfig = true }: ProjectBOQTabProps) {
     const [mode, setMode] = useState<'VIEW' | 'COMPARE'>('VIEW');
 
     if (!hasConfig) {
@@ -32,7 +34,7 @@ export default function ProjectBOQTab({ projectId, hasConfig = true }: ProjectBO
     return (
         <div style={styles.container}>
             {/* Self-contained BOQ Module */}
-            <BOQPage projectId={projectId} />
+            <BOQPage projectId={projectId} areaId={areaId}subareaId={subareaId} />
 
             {/* Floating comparison trigger for quick access */}
             <button
