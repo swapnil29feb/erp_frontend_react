@@ -12,6 +12,7 @@ interface Project {
     status: string;
     project_code: string;
     segment_area: string;
+    created_at: string;
     updated_at?: string;
     boqCount?: number;
 }
@@ -420,7 +421,7 @@ const Projects: FC = () => {
                             <th>Client</th>
                             <th>Segment</th>
                             <th style={{ width: '120px' }}>Status</th>
-                            <th>Last Updated</th>
+                            <th>Created at</th>
                             <th className="action-cell">Actions</th>
                         </tr>
                     </thead>
@@ -450,7 +451,7 @@ const Projects: FC = () => {
                                         <span className={getStatusBadgeClass(p.status)}>{p.status.replace('_', ' ')}</span>
                                     </td>
                                     <td style={{ fontSize: '12px', color: '#6b7280' }}>
-                                        {p.updated_at ? new Date(p.updated_at).toLocaleDateString() : '-'}
+                                        {p.created_at ? new Date(p.created_at).toLocaleDateString() : '-'}
                                     </td>
                                     <td className="action-cell">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

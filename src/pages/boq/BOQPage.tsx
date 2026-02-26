@@ -71,7 +71,8 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId,areaId: prop
   const [searchResults, setSearchResults] = useState<ProjectSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
-
+const [editingId, setEditingId] = useState<number | null>(null);
+const [editData, setEditData] = useState<any>({});
   const [selectedProject, setSelectedProject] =
     useState<ProjectSearchResult | null>(null);
   const [projectMode, setProjectMode] = useState<"AREA_WISE" | "PROJECT_LEVEL">(
@@ -89,6 +90,47 @@ const BOQPage: React.FC<BOQPageProps> = ({ projectId: propProjectId,areaId: prop
   const [error, setError] = useState<string | null>(null);
 
   const searchRef = useRef<HTMLDivElement>(null);
+const handleEdit = (item:any) => {
+  console.log("prsss edit")
+  setEditingId(item.id);
+  setEditData({
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    markup_pct: item.markup_pct,
+  });
+};
+
+const handleSave = async (id: number) => {
+  await apiClient.patch(`/boq/items/${id}/`, {
+    quantity: editData.quantity,
+  });
+
+  setEditingId(null);
+
+  if (selectedVersion) {
+    loadBOQDetail(selectedVersion.id, propAreaId, propSubareaId);
+  }
+};
+
+const handleDelete = async (id: number) => {
+  if (!window.confirm("Are you sure you want to delete this item?"))
+    return;
+
+  try {
+    await apiClient.delete(`/boq/items/${id}/`);
+
+    // reload BOQ
+    if (selectedVersion) {
+      loadBOQDetail(
+        selectedVersion.id,
+        propAreaId,
+        propSubareaId
+      );
+    }
+  } catch (err) {
+    alert("Failed to delete item");
+  }
+};
 
   // -- Helper: Safe formatting --
   const formatCurrency = (value: any) => {
@@ -529,20 +571,77 @@ console.log(`Rendering section ${title} with total ${total} and rows:`, rows);
               <th >Qty</th>
               <th >Amount</th>
               <th>total</th>
+              <th>action</th>
             </tr>
           </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.order_code }>
-                
-                <td >{r.order_code}</td>
-                <td >{r.name||r.make||r.description}</td>
-                <td >{r.qty}</td>
-                <td>{formatCurrency(r.unit_price)}</td>
-                <td >{formatCurrency(r.total)}</td>
-              </tr>
+         
+           <tbody>
+  {items
+    .filter((item) => {
+      if (title === "Products") return item.item_type === "PRODUCT";
+      if (title === "Drivers") return item.item_type === "DRIVER";
+      if (title === "Accessories") return item.item_type === "ACCESSORY";
+      return false;
+    })
+    .map((item) => (
+      <tr key={item.id}>
+        <td className="erp">
+          {item.product_details?.order_code ||
+            item.driver_details?.driver_code ||
+            item.accessory_details?.name}
+        </td>
+
+        <td>
+          {item.product_details?.name ||
+            item.driver_details?.driver_make ||
+            item.accessory_details?.type}
+        </td>
+
+        <td>
+          {editingId === item.id ? (
+            <input
+              type="number"
+              value={editData.quantity}
+              onChange={(e) =>
+                setEditData({
+                  ...editData,
+                  quantity: Number(e.target.value),
+                })
+              }
+            />
+          ) : (
+            item.quantity
+          )}
+        </td>
+
+        <td>{formatCurrency(item.unit_price)}</td>
+
+        <td>{formatCurrency(item.final_price)}</td>
+
+        <td>
+          {selectedVersion?.status === "DRAFT" &&
+            (editingId === item.id ? (
+              <>
+                <button onClick={() => handleSave(item.id)}>Save</button>
+                <button onClick={() => setEditingId(null)}>Cancel</button>
+              </>
+            ) : (
+               <>
+      <button onClick={() => handleEdit(item)}>Edit</button>
+
+      <button
+        style={{ marginLeft: 8, color: "red" }}
+        onClick={() => handleDelete(item.id)}
+      >
+        Delete
+      </button>
+    </>
             ))}
-          </tbody>
+        </td>
+      </tr>
+    ))}
+</tbody>
+         
         </table>
       ),
     };
