@@ -20,6 +20,13 @@ export interface Product {
     updated_at: string;
     image?: string;
     visual_image?: string;
+    illustrative_details?: string;
+    photometrics?: string;
+    audit_logs?: Array<{
+        action: string;
+        user: string;
+        timestamp: string;
+    }>;
     cct_kelvin?: number;
     beam_angle_degree?: number;
 }
@@ -48,6 +55,8 @@ const mapToProduct = (item: any): Product => ({
     beam_angle_degree: item.beam_angle_degree || Number(item.beam_angle || 0)
 });
 
+const BASE_URL = "/masters/products/";
+
 export const productService = {
     getProducts: async (search?: string, page: number = 1, active?: boolean, pageSize: number = 20) => {
         const queryParams = new URLSearchParams();
@@ -56,12 +65,8 @@ export const productService = {
         if (search) queryParams.append('search', search);
         if (active !== undefined) queryParams.append('active', active.toString());
 
-        console.log(`[productService] Fetching: /masters/products/?${queryParams.toString()}`);
-
         try {
-            const res = await api.get(`/masters/products/?${queryParams.toString()}`);
-            console.log('[productService] Raw Response:', res.data);
-
+            const res = await api.get(`${BASE_URL}?${queryParams.toString()}`);
             let results: Product[] = [];
             let count = 0;
 
@@ -81,71 +86,63 @@ export const productService = {
     },
 
     getProduct: async (id: number) => {
-        const res = await api.get(`/masters/products/${id}/`);
+        const res = await api.get(`${BASE_URL}${id}/`);
         return mapToProduct(res.data);
     },
 
     toggleStatus: async (id: number, isActive: boolean) => {
-        const res = await api.patch(`/masters/products/${id}/`, { is_active: isActive });
+        const res = await api.patch(`${BASE_URL}${id}/`, { is_active: isActive });
         return mapToProduct(res.data);
     },
-    createProduct: async (product: Partial<Product>) => {
-        const form = new FormData();
-        console.log('[productService] Creating product with data:', product);
 
-        Object.entries(product).forEach(([key, value]) => {
-            if (value === "" || value === undefined || value === null) return;
+    createProduct: async (product: any) => {
+        const formData = new FormData();
 
-            // Handle File objects directly (from our custom FileInput)
-            if (value instanceof File) {
-                form.append(key, value);
-            }
-            // convert numeric strings to number-like
-            else if (!isNaN(value as any) && value !== true && value !== false && typeof value !== 'object') {
-                form.append(key, String(Number(value)));
-            } else {
-                form.append(key, value as any);
+        Object.keys(product).forEach((key) => {
+            const value = product[key];
+
+            if (value !== null && value !== undefined) {
+                formData.append(key, value);
             }
         });
 
-        // Debug output
-        /*
-        for (let [key, value] of form.entries()) {
-             console.log(`${key}:`, value);
-        }
-        */
-
-        const res = await api.post(`/masters/products/`, form, {
+        const res = await api.post(BASE_URL, formData, {
             headers: { "Content-Type": "multipart/form-data" }
         });
 
         return mapToProduct(res.data);
     },
 
+    updateProduct: async (id: number, data: any) => {
+        const formData = new FormData();
 
-    updateProduct: async (id: number, product: Partial<Product>) => {
-        const form = new FormData();
-        console.log('[productService] Updating product', id, 'with data:', product);
-
-        Object.entries(product).forEach(([key, value]) => {
-            if (value === "" || value === undefined || value === null) return;
-
-            // Handle File objects directly
-            if ((value as any) instanceof File) {
-                form.append(key, value as Blob);
-            }
-            else if (!isNaN(value as any) && value !== true && value !== false && typeof value !== 'object') {
-                form.append(key, String(Number(value)));
-            } else {
-                form.append(key, value as any);
+        Object.keys(data).forEach((key) => {
+            const value = data[key];
+            if (value !== undefined && value !== null) {
+                formData.append(key, value);
             }
         });
 
-        const res = await api.patch(`/masters/products/${id}/`, form, {
-            headers: { "Content-Type": "multipart/form-data" }
-        });
+        console.log("PATCH URL:", `${BASE_URL}${id}/`);
 
-        return mapToProduct(res.data);
+        return api.patch(`${BASE_URL}${id}/`, formData, {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        }).then(res => mapToProduct(res.data));
     },
 
+    deleteProduct: async (id: number) => {
+        await api.delete(`${BASE_URL}${id}/`);
+    },
+
+    getProductDetails: async (id: number) => {
+        const response = await api.get(`${BASE_URL}${id}/`);
+        return response.data;
+    }
+};
+
+export const getProductDetails = async (id: number) => {
+    const response = await api.get(`/masters/products/${id}/`);
+    return response.data;
 };

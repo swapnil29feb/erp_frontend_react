@@ -45,8 +45,8 @@ const Projects: FC = () => {
         notes: "",
         tags: "",
         inquiry_type: "AREA_WISE",
-          currency: "INR",          // ✅ new
-    exchange_rate: "1",  
+        currency: "INR",          // ✅ new
+        exchange_rate: "1",
     };
 
     const [form, setForm] = useState(initialFormState);
@@ -185,8 +185,8 @@ const Projects: FC = () => {
                 description: form.description || "",
                 notes: form.notes || "",
                 tags: form.tags || "",
-                   currency: form.currency,                     // ✅
-    exchange_rate: Number(form.exchange_rate),   // ✅
+                currency: form.currency,                     // ✅
+                exchange_rate: Number(form.exchange_rate),   // ✅
             };
 
             await api.post("/projects/projects/", payload);
@@ -260,8 +260,8 @@ const Projects: FC = () => {
             notes: project.notes || "",
             tags: project.tags || "",
             inquiry_type: project.inquiry_type || "AREA_WISE",
-                currency: project.currency || "INR",                     // ✅
-    exchange_rate: project.exchange_rate ? String(project.exchange_rate) : "1",   // ✅
+            currency: project.currency || "INR",                     // ✅
+            exchange_rate: project.exchange_rate ? String(project.exchange_rate) : "1",   // ✅
 
         });
         setShowModal(true);
@@ -420,7 +420,7 @@ const Projects: FC = () => {
                             <th>Client</th>
                             <th>Segment</th>
                             <th style={{ width: '120px' }}>Status</th>
-                            <th>Last Updated</th>
+                            <th>Created At</th>
                             <th className="action-cell">Actions</th>
                         </tr>
                     </thead>
@@ -571,46 +571,46 @@ const Projects: FC = () => {
                                             style={{ width: '100%', height: '40px' }}
                                         />
                                     </div>
-                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-    <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-        Estimated Cost
-    </label>
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                            Estimated Cost
+                                        </label>
 
-    <div style={{ display: 'flex', gap: '8px' }}>
-        {/* Currency Select */}
-        <select
-            value={form.currency}
-            onChange={(e) => setForm({ ...form, currency: e.target.value })}
-            className="table-search"
-            style={{ width: '120px', height: '40px' }}
-        >
-            <option value="INR">INR ₹</option>
-            <option value="USD">USD $</option>
-            <option value="EUR">EUR €</option>
-            <option value="GBP">GBP £</option>
-            <option value="AED">AED د.إ</option>
-        </select>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            {/* Currency Select */}
+                                            <select
+                                                value={form.currency}
+                                                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                                                className="table-search"
+                                                style={{ width: '120px', height: '40px' }}
+                                            >
+                                                <option value="INR">INR ₹</option>
+                                                <option value="USD">USD $</option>
+                                                <option value="EUR">EUR €</option>
+                                                <option value="GBP">GBP £</option>
+                                                <option value="AED">AED د.إ</option>
+                                            </select>
 
-        {/* Cost Input */}
-       
-    </div>
-</div>
+                                            {/* Cost Input */}
 
-{/* Exchange Rate Field */}
-<div style={{ display: 'flex', flexDirection: 'column' }}>
-    <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
-        Exchange Rate (to INR)
-    </label>
-    <input
-        type="number"
-        step="0.01"
-        placeholder="1.00"
-        value={form.exchange_rate}
-        onChange={(e) => setForm({ ...form, exchange_rate: e.target.value })}
-        className="table-search"
-        style={{ width: '100%', height: '40px' }}
-    />
-</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Exchange Rate Field */}
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <label style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                                            Exchange Rate (to INR)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="1.00"
+                                            value={form.exchange_rate}
+                                            onChange={(e) => setForm({ ...form, exchange_rate: e.target.value })}
+                                            className="table-search"
+                                            style={{ width: '100%', height: '40px' }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
